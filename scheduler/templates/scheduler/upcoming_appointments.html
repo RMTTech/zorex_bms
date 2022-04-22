@@ -1,0 +1,453 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}<script type="text/javascript" src="{% static 'scheduler/styles/moment.js' %}"></script>{% endblock %}
+
+{% block main %}
+
+<div class="container p-0 mw-600px">
+    <div class="card mx-4 my-2 p-2 bg-light Regular shadow">
+        <div class="card-body text-center">
+            <div class="btn-group flex-wrap" role="group">
+                <a id="yesterday" href="/scheduler/upcoming_appointments?date=yesterday" role="button" class="btn btn-outline-primary">Yesterday</a>
+                <a id="today" href="/scheduler/upcoming_appointments?date=today" role="button" class="btn btn-outline-primary">Today</a>
+                <a id="tomorrow" href="/scheduler/upcoming_appointments?date=tomorrow" role="button" class="btn btn-outline-primary">Tomorrow</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for event in events %}
+<div id="container{{event.id}}" class="container p-0 mw-600px">
+    <div class="card mx-4 my-2 p-0 bg-light Regular shadow">
+        <div id="id_unlock{{event.id}}" class="disable-card {% if not event.completed %}d-none{%endif%}">
+            <div class="text-center" style="margin-top: 20%;">
+                <button onclick="unlockApp({{event.id}})" class="btn btn-dark">Unlock Appointment</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div>
+                <table>
+                    <tr>
+                        <td>Attendee:<input class="d-none" id="event_account_id{{event.id}}" value="{{event.event_account.id}}"></td>
+                        <td id="td_account{{event.id}}">{{event.event_account.name}}<input class="d-none" id="event_account{{event.id}}" value="{{event.event_account.name}}"></td>
+                    </tr>
+                    <tr>
+                        <td>Customer:<input class="d-none" id="event_customer_id{{event.id}}" value="{{event.event_customer.id}}"></td>
+                        <td><a id="td_customer{{event.id}}" href="{% url 'customer_dashboard' event.event_customer.id %}">{{event.event_customer}}</a><input class="d-none" id="event_customer{{event.id}}" value="{{event.event_customer}}"></td>
+                    </tr>
+                    <tr>
+                        <td>Number:</td>
+                        <td><a href="tel:{{event.event_customer.number}}">{{event.event_customer.number}}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Address:</td>
+                        <td><a target="_blank" href="http://maps.google.com/?q={{event.event_customer.address}}">{{event.event_customer.address}}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Description:<input class="d-none" id="event_description{{event.id}}" value="{{event.description}}"></td>
+                        <td id="td_description{{event.id}}">{{event.description}}</td>
+                    </tr>
+                    <tr>
+                        <td>Start:<input class="d-none" id="event_start{{event.id}}" value="{{event.start|date:'Y-m-d\TH:i'}}"></td>
+                        <td id="td_start{{event.id}}">{{event.start|date:"D d-n-Y g:i A"}}</td>
+                    </tr>
+                    <tr>
+                        <td>End:<input class="d-none" id="event_end{{event.id}}" value="{{event.end|date:'Y-m-d\TH:i'}}"></td>
+                        <td id="td_end{{event.id}}">{{event.end|date:"D d-n-Y g:i A"}}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="text-center mt-3">
+                <a id="id_onapproachsms{{event.id}}" role="button" class="btn btn-sm btn-primary fs-8 my-2 {% if event.onapproachsms %}disabled{% endif %}" onclick="sendOnApproach({{event.id}})">On Approach SMS</a>
+                <a id="id_onsite{{event.id}}" role="button" class="btn btn-sm btn-dark fs-8 my-2 {% if event.onsite %}d-none{% endif %}" onclick="jobOnSite({{event.id}})">On-Site</a>
+                <a id="id_completed{{event.id}}" role="button" class="btn btn-sm btn-dark fs-8 my-2 {% if not event.onsite %}d-none{% endif %} {% if event.completed %}disabled{% endif %}" onclick="jobCompleted({{event.id}})">Complete</a>
+                <a role="button" class="btn btn-sm btn-success fs-8 my-2" href="{% url 'create_invoice' event.event_customer.id %}">Create Invoice</a>
+                <a role="button" class="btn btn-sm btn-secondary fs-8 my-2" onclick="notesWindow(true,{{event.event_customer.id}})">Notes</a>
+                <a role="button" class="btn btn-sm btn-info fs-8 my-2" onclick="event_update_window(true,{{event.id}})">Edit</a>
+                <a role="button" class="btn btn-sm btn-danger fs-8 my-2" onclick="delete_event({{event.id}})">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="d-block text-center">
+    <button type="button" class="btn btn-dark" onclick="window.history.back();">Back</button>
+</div>
+
+<div id="event_window" class="modal backdrop index-2" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header p-2 bg-primary text-light">
+                <h5 class="modal-title mx-auto" id="exampleModalLongTitle">Appointment</h5>
+                <button class="btn btn-danger p-x" onclick="event_update_window(false)">
+                    <span class="fs-4">&times;</span>
+                </button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="id_event_customer" class="col-form-label">Customers Name:</label>
+                        <input disabled id="id_event_customer" class="form-control" type="text">
+                        <input disabled id="id_event_customer_id" class="form-control d-none" type="text" name="event_customer">
+                    </div>
+                    <input id="id_event_id" class="d-none" type="text" name="event_id">
+                    <div class="form-group">
+                        <label for="id_event_account" class="col-form-label">Attendee Name:</label>
+                        <input name="event_account" id="id_event_account" class="form-control" disabled>
+                        <input disabled id="id_event_account_id" class="form-control d-none" type="text" name="event_account">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_description" class="col-form-label">Description:</label>
+                        <textarea name="description" cols="30" rows="2" class="form-control" placeholder="Enter event description" required="" id="id_description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_start" class="col-form-label">Start Date:</label>
+                        <input type="datetime-local" name="start" class="form-control" required="" id="id_start">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_end" class="col-form-label">End Date:</label>
+                        <input type="datetime-local" name="end" class="form-control" required="" id="id_end">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <a role="button" onclick="updateEvent()" class="btn btn-success btn-sm">Update</a>
+                    <a role="button" onclick="event_update_window(false)" type="button" class="btn btn-danger btn-sm">Close</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="notes_window" class="modal backdrop index-2" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header p-2 bg-primary text-light">
+                <h5 class="modal-title mx-auto">Notes</h5>
+                <button class="btn btn-danger p-x" onclick="notesWindow(false)">
+                    <span class="fs-4">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <span for="id_start" class="col-form-label">Previous Notes:</span><br>
+                    <ul class="fs-8" id="noteslist" style="max-height: 23rem; overflow: auto;"></ul>
+                </div>
+                <div class="form-group">
+                    <input name="customer_id" id="customer_id" class="d-none">
+                    <label for="newnote">Note:</label>
+                    <textarea class="form-control" name="newNote" id="newnote" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a role="button" onclick="addNote()" class="btn btn-success btn-sm">Add</a>
+                <a role="button" onclick="notesWindow(false)" type="button" class="btn btn-danger btn-sm">Close</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="id_loading_spinner" class="backdrop modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+
+<script>
+
+if (currentURL.includes("yesterday") == true){
+    $('#yesterday')[0].classList.add('active');
+}else if (currentURL.includes("today") == true){
+    $('#today')[0].classList.add('active');
+}else if (currentURL.includes("tomorrow") == true){
+    $('#tomorrow')[0].classList.add('active');
+}
+function delete_event(eventId){
+    if(window.confirm("Are you sure you want to delete this Appointment?")){
+        displayLoadingSpinner(true);
+        event_data = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: eventId,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'event_delete' %}",
+            data: event_data,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#container" + eventId)[0].classList.add('d-none');
+                    showMessage('alert-success', "Deleted Successfully!");
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error','Something went wrong, please try again!')
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!')
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+            },
+        })
+    }
+}
+function sendOnApproach(eventId){
+    displayLoadingSpinner(true);
+    event_data = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        id: eventId,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'onapproachsms' %}",
+        data: event_data,
+        success: function(data){
+            if (data.result == "success"){
+                $("#id_onapproachsms" + eventId)[0].classList.add("disabled");
+                showMessage('alert-success', data.message);
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', data.message);
+            }
+        },
+        error: function(data){
+            showMessage('alert-error','Please check your internet and try again!');
+        },
+        complete: function(data){
+            displayLoadingSpinner(false);
+        },
+    })
+}
+function event_update_window(status, eventId){
+    if(status){
+        eventData(eventId);
+        $("#event_window").show(200)
+    }else{
+        $("#event_window").hide(200)
+    }
+}
+function eventData(eventId){
+    $("#id_event_id")[0].value = eventId
+    $("#id_event_customer")[0].value = $("#event_customer" + eventId)[0].value;
+    $("#id_event_customer_id")[0].value = $("#event_customer_id" + eventId)[0].value;
+    $("#id_event_account")[0].value = $("#event_account" + eventId)[0].value;
+    $("#id_event_account_id")[0].value = $("#event_account_id" + eventId)[0].value;
+    $("#id_description")[0].value = $("#event_description" + eventId)[0].value;
+    $("#id_start")[0].value = $("#event_start" + eventId)[0].value;
+    $("#id_end")[0].value = $("#event_end" + eventId)[0].value;
+}
+function updateEvent(){
+    let eventId = $("#id_event_id")[0].value;
+    event_data = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        id: $("#id_event_id")[0].value,
+        description: $("#id_description")[0].value,
+        start: moment($("#id_start")[0].value).format(),
+        end: moment($("#id_end")[0].value).format(),
+        event_customer: $("#id_event_customer_id")[0].value,
+        event_account: $("#id_event_account_id")[0].value,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'event_update' %}",
+        data: event_data,
+        success: function(data){
+            if (data.result == "success"){
+                window.location.reload();
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error','Something went wrong, please try again!');
+            }
+        },
+        error: function(data){
+            showMessage('alert-error','Please check your internet and try again!');
+            
+        },
+        complete: function(data){
+        },
+    })
+}
+function jobCompleted(eventId){
+    displayLoadingSpinner(true);
+    event_data = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        id: eventId,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'ajax_jobcompleted' %}",
+        data: event_data,
+        success: function(data){
+            if (data.result == "success"){
+                $("#id_unlock" + eventId)[0].classList.remove("d-none");
+                $("#id_completed" + eventId)[0].classList.add("disabled");
+                showMessage('alert-success', "Job Marked as Completed");
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error','Something went wrong, please try again!');
+            }
+        },
+        error: function(data){
+            showMessage('alert-error','Please check your internet and try again!');
+        },
+        complete: function(data){
+            displayLoadingSpinner(false);
+        },
+    })
+}
+function unlockApp(eventId){
+    displayLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        id: eventId,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'ajax_unlockapp' %}",
+        data: payload,
+        success: function(data){
+            if (data.result == "success"){
+                $("#id_unlock" + eventId)[0].classList.add("d-none");
+                $("#id_completed" + eventId)[0].classList.remove("disabled");
+                showMessage('alert-success', "Job has been Unlocked");
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error','Something went wrong, please try again!');
+            }
+        },
+        error: function(data){
+            showMessage('alert-error','Please check your internet and try again!');
+        },
+        complete: function(data){
+            displayLoadingSpinner(false);
+        },
+    })
+}
+function jobOnSite(eventId){
+    displayLoadingSpinner(true);
+    event_data = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        id: eventId,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'ajax_onsite' %}",
+        data: event_data,
+        success: function(data){
+            if (data.result == "success"){
+                $("#id_onsite" + eventId)[0].classList.add("d-none");
+                $("#id_completed" + eventId)[0].classList.remove("d-none");
+                showMessage('alert-success', "Job Marked as Started");
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error','Something went wrong, please try again!');
+            }
+        },
+        error: function(data){
+            showMessage('alert-error','Please check your internet and try again!');
+        },
+        complete: function(data){
+            displayLoadingSpinner(false);
+        },
+    })
+}
+
+//Customer Notes
+function notesWindow(status, cusID=null){
+    if (status){
+        $("#customer_id")[0].value = cusID;
+        notesFeed(cusID)
+        $("#notes_window").show(200)
+    }else{
+        $("#notes_window").hide(200)
+    }
+}
+function addNote(){
+    if ($("#newnote")[0].value){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: $("#customer_id")[0].value,
+            note: $("#newnote")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'ajax_add_note' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                    notesFeed($("#customer_id")[0].value);
+                    $("#newnote")[0].value = "";
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+            },
+        })
+    }
+}
+function notesFeed(cusID){
+    displayLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        id: $("#customer_id")[0].value,
+        note: $("#newnote")[0].value,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'customer_notes_feed' %}",
+        data: payload,
+        success: function(data){
+            if (data[data.length - 1].result == "success"){
+                let ul = document.getElementById('noteslist')
+                while (ul.lastChild) {
+                    ul.removeChild(ul.lastChild);
+                }
+                for( i = 0; i < data.length - 1; i++){
+                    if (data[i].note){
+                        let li = document.createElement('li');
+                        li.innerText = data[i].note;
+                        ul.appendChild(li)
+                    }
+                }
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', 'Something went wrong Please contact the system Admin.');
+            }
+        },
+        error: function(data){
+            showMessage('alert-error','Please check your internet and try again!');
+        },
+        complete: function(data){
+            displayLoadingSpinner(false);
+        },
+    })
+}
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,355 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+        
+{% if user.is_authenticated and user.is_admin %}
+
+<div class="m-auto mw-1200px">
+    <h2 class="text-center m-2" style="color: #6001fb;">
+        <button type="button" class="btn btn-dark float-start mobile-view" onclick="window.history.back();">Back</button>
+        Cron Jobs
+        <button type="button" class="btn btn-primary float-end mobile-view" onclick="cronWindow(true)">Add CronJob</button>
+    </h2>
+    <div class="m-1">
+        <div class="card shadow bg-light table-responsive" style="min-height: 50vh;">
+            <table id="id_table" class="table table-striped fs-7 table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th scope="col" style="min-width: 150px; width: 150px;"><span class="d-block" role="button">ID</span></th>
+                        <th scope="col" style="min-width: 400px; width: 400px;"><span class="d-block" role="button">Command to run</span></th>
+                        <th scope="col" style="min-width: 90px; width: 90px;"><span class="d-block" role="button">Schedule</span></th>
+                        <th scope="col" style="min-width: 150px; width: 150px;"><span class="d-block" role="button">Cron Last Run</span></th>
+                        <th scope="col" style="min-width: 120px; width: 120px"><span class="d-block" role="button">Last Run Status</span></th>
+                        <th scope="col" style="min-width: 55px; width: 55px;"><span class="d-block" role="button">Status</span></th>
+                        <th scope="col" style="min-width: 45px; width: 45px;"><span class="d-block" role="button"></span></th>
+                        <th scope="col" style="min-width: 45px; width: 45px;"><span class="d-block" role="button"></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cron in crons %}
+                    <tr>
+                        <td>{{cron.comment}}{{cron.slice}}</td>
+                        <td style="word-break:break-word;">{{cron.command}}</td>
+                        <td>{{cron.schedule}}</td>
+                        <td>{{cron.last_run|date:"Y-m-d g:i A"}}</td>
+                        <td>{% if cron.last_run_status %}<span style="color: green; display: block;">Successful</span>{% else %}
+                            {% if cron.last_run_status == False %}<span style="color: red; display: block;">UnSuccessful</span>{% endif %}{% endif %}</td>
+                        <td>{% if cron.status %}<span role="button" class="btn btn-success btn-sm fs-8 d-block" onclick="cronStatusUpdate('{{cron.comment}}')">Active</span>{% else %}<span class="d-block btn btn-danger btn-sm fs-8" onclick="cronStatusUpdate('{{cron.comment}}')">Disabled</span>{% endif %}</td>
+                        <td><span class="btn btn-sm btn-success fs-8 d-block" onclick="cronRun('{{cron.comment}}')">Run</span></td>
+                        <td><span class="btn btn-sm btn-danger fs-8 d-block" onclick="deleteCron('{{cron.comment}}')">Del</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="m-1">
+    <div class="mw-400px m-auto">
+        <div class="card">
+            <div class="card-header">List of available Scripts</div>
+            <div class="card-body">
+                {% for file in files %}
+                {{file}}<br>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<div id="add_cron_window" class="modal backdrop" tabindex="-1">
+    <div class="modal-dialog mt-8">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Subscription Cancellation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="cronWindow(false)"></button>
+            </div>
+            <div class="modal-body">
+                <div class="col-md-12">
+                    <label for="cron_command">Cron Command</label>
+                    <textarea type="text" class="form-control" id="cron_command" rows="3" placeholder="Cron Command"></textarea>
+                </div>
+                <div class="col-md-12">
+                    <label for="frequency">Frequency</label>
+                    <select type="text" class="form-control" id="frequency" onchange="frequentOptionSeleted(this)">
+                        <option value="" selected></option>
+                        <option value="every">Every</option>
+                        <option value="on">On</option>
+                    </select>
+                </div>
+                <div id="every_option" style="display: none;">
+                    <div class="col-md-12">
+                        <label for="frequent_value">Frequent Value</label>
+                        <input type="number" class="form-control" id="frequent_value" value="1">
+                    </div>
+                    <div class="col-md-12">
+                        <label for="frequent">The Frequent</label>
+                        <select type="text" class="form-control" id="frequent">
+                            <option value="" selected></option>
+                            <option value="minutes">Minute</option>
+                            <option value="hours">Hour</option>
+                            <option value="days">Day</option>
+                            <option value="months">Month</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="on_option" style="display: none;">
+                    <div class="col-md-12">
+                        <label for="on_frequent_value">Time</label>
+                        <input type="time" class="form-control" id="on_frequent_value">
+                    </div>
+                    <div class="col-md-12">
+                        <label for="frequent">Every</label>
+                        <select type="text" class="form-control" id="on_frequent">
+                            <option value="" selected></option>
+                            <option value="days">Day</option>
+                            <option value="0">Sunday</option>
+                            <option value="1">Monday</option>
+                            <option value="2">Tuesday</option>
+                            <option value="3">Wednesday</option>
+                            <option value="4">Thursday</option>
+                            <option value="5">Friday</option>
+                            <option value="6">Saturday</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-success" onclick="addCron()">Add Cron</button>
+                <button type="button" class="btn btn-secondary" onclick="cronWindow(false)">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="id_loading_spinner" class="backdrop modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<div class="d-block text-center">
+    <button type="button" class="btn btn-primary" onclick="cronWindow(true)">Add CronJob</button>
+    <button type="button" class="btn btn-dark my-2" onclick="window.history.back();">Back</button>
+</div>
+
+
+{% endif %}
+
+{% endblock %}
+{% block script %}
+
+<script>
+    //Cron Handler
+    function cronWindow(status){
+        if(status){
+            $("#add_cron_window").show(200);
+        }
+        else{
+            $("#add_cron_window").hide(200);
+        }
+    }
+    function addCron(){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            command: $("#cron_command")[0].value,
+            frequency: $("#frequency")[0].value,
+            frequent_value: $("#frequent_value")[0].value,
+            frequent: $("#frequent")[0].value,
+            on_frequent_value: $("#on_frequent_value")[0].value,
+            on_frequent: $("#on_frequent")[0].value,
+        }
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'addcron' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+                window.location.reload();
+            },
+        })
+    }
+    function deleteCron(cronID){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            comment: cronID
+        }
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'deletecron' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                    window.location.reload();
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+            },
+        })
+    }
+    function cronStatusUpdate(cronID){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            comment: cronID
+        }
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'cronstatusupdate' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+                window.setTimeout(function(){location.reload()},1000)
+            },
+        })
+    }
+    function cronRun(cronID){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            comment: cronID
+        }
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'cronforcerun' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+                window.setTimeout(function(){location.reload()},3000)
+            },
+        })
+    }
+    function frequentOptionSeleted(optionSelected){
+        console.log(optionSelected.value)
+        if(optionSelected.value == 'on'){
+            $("#frequent_value")[0].value = 1;
+            $("#frequent")[0].value = "";
+            $("#every_option").hide()
+            $("#on_option").show()
+        }else if(optionSelected.value == 'every'){
+            $("#on_frequent_value")[0].value = "";
+            $("#on_frequent")[0].value = "";
+            $("#on_option").hide()
+            $("#every_option").show()
+        }
+    }
+
+    //Resizable Table
+    const idTable = document.getElementById('id_table');
+    resizableGrid(idTable)
+    function resizableGrid(table) {
+        var row = table.getElementsByTagName('tr')[0],
+        cols = row ? row.children : undefined;
+        if (!cols) return;
+        for (var i=0;i<cols.length;i++){
+            var div = createDiv(table.offsetHeight);
+            cols[i].appendChild(div);
+            cols[i].style.position = 'relative';
+            setListeners(div);
+        }
+    }
+    function createDiv(height){
+        var div = document.createElement('div');
+        div.style.top = 0;
+        div.style.right = 0;
+        div.style.width = '5px';
+        div.style.position = 'absolute';
+        div.style.cursor = 'col-resize';
+        /* remove backGroundColor later */
+        // div.style.backgroundColor = 'red';
+        div.style.userSelect = 'none';
+        /* table height */
+        div.style.height = height+'px';
+        return div;
+    }
+    function setListeners(div){
+        var pageX,curCol,nxtCol,curColWidth,nxtColWidth;
+        div.addEventListener('mousedown', function (e) {
+            curCol = e.target.parentElement;
+            nxtCol = curCol.nextElementSibling;
+            pageX = e.pageX;
+            curColWidth = curCol.offsetWidth
+            if (nxtCol)
+                nxtColWidth = nxtCol.offsetWidth
+        });
+
+        document.addEventListener('mousemove', function (e) {
+        if (curCol) {
+            var diffX = e.pageX - pageX;
+
+            if (nxtCol)
+                nxtCol.style.width = (nxtColWidth - (diffX))+'px';
+
+            curCol.style.width = (curColWidth + diffX)+'px';
+            }
+        });
+
+        document.addEventListener('mouseup', function (e) { 
+            curCol = undefined;
+            nxtCol = undefined;
+            pageX = undefined;
+            nxtColWidth = undefined;
+            curColWidth = undefined;
+        });
+    }
+</script>
+
+{% endblock %}

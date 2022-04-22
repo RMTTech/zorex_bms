@@ -1,0 +1,56 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+<div class="container p-0 mw-600px">
+    <div class="card m-4 p-2 bg-light Regular shadow">
+        <div class="card-body">
+            <form action="." method="POST" class="row g-3">{% csrf_token %}
+                <h2>Business Registration Form</h2>
+                <div class="col-md-6">
+                    <label for="id_first_name">First name<span style="color: red;">*</span></label>
+                    <input type="text" name="first_name" maxlength="30" class="form-control" id="id_first_name" placeholder="First Name" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_last_name">Last name<span style="color: red;">*</span></label>
+                    <input type="text" name="last_name" maxlength="30" class="form-control" id="id_last_name" placeholder="Last Name" required>
+                </div>
+                <div class="col-12">
+                    <label for="id_email" class="form-label">Email<span style="color: red;">*</span></label>
+                    <input type="email" name="email" class="form-control" id="id_email" placeholder="Email" required>
+                </div>
+                <div class="col-12">
+                    <label for="id_number">Mobile number<span style="color: red;">*</span></label>
+                    <input type="text" name="number" class="form-control" required id="id_number" maxlength="16" pattern="[0-9 -]{10,}" placeholder="Mobile Number">
+                </div>
+                <div class="col-12">
+                    <label for="id_date_of_birth">Date Of Birth</label>
+                    <input type="date" name="date_of_birth" class="form-control" id="id_date_of_birth" placeholder="YYYY-MM-DD">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_privacy_policy" name="privacy_policy" required>
+                    <label class="form-check-label" for="id_privacy_policy">
+                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_terms_conditions" name="terms_conditions" required>
+                    <label class="form-check-label" for="id_terms_conditions">
+                        <a href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                    </label>
+                </div>
+                <script src='https://www.google.com/recaptcha/api.js'></script>
+                <div class="g-recaptcha" data-sitekey="{{google_site_key}}"></div>
+                <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary">Create Account</button> <button type="button" class="btn btn-dark" onclick="window.history.back();">Back</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

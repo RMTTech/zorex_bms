@@ -1,0 +1,124 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+<div class="container p-0 mw-600px">
+    <div class="card m-4 p-2 bg-light Regular shadow">
+        <div class="card-body">
+            <form action="." method="POST" class="row g-3">{% csrf_token %}
+                <h2>Customer Creation Form</h2>
+                <div class="col-md-6">
+                    <label for="id_first_name">First name</label>
+                    <input type="text" name="first_name" maxlength="30" class="form-control" id="id_first_name" placeholder="First Name" required {% if customer.first_name %}value="{{customer.first_name}}"{% endif %}>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_last_name">Last name</label>
+                    <input type="text" name="last_name" maxlength="30" class="form-control" id="id_last_name" placeholder="Last Name" required {% if customer.last_name %}value="{{customer.last_name}}"{% endif %}>
+                </div>
+                <div class="col-12">
+                    <label for="inputEmail4" class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" id="id_email" placeholder="Email" required {% if customer.email %}value="{{customer.email}}"{% endif %}>
+                </div>
+                <div class="col-12">
+                    <label for="id_number">Mobile number</label>
+                    <input type="text" name="number" class="form-control" required id="id_number" maxlength="16" pattern="[0-9 -]{10,}" placeholder="Mobile Number" {% if customer.number %}value="{{customer.number}}"{% endif %}>
+                </div>
+                <div class="col-12">
+                    <label for="id_address">Address</label>
+                    <input type="text" name="address" class="form-control" id="id_address" placeholder="Address" required  {% if customer.address %}value="{{customer.address}}"{% endif %}>
+                </div>
+                <div class="col-6">
+                    <label for="id_address">Business Name</label>
+                    <input type="text" name="business_name" class="form-control" id="id_business_name" placeholder="Business Name" {% if customer.business_name %}value="{{customer.business_name}}"{% endif %}>
+                </div>
+                <div class="col-6">
+                    <label for="id_address">ABN/ACN</label>
+                    <input type="text" name="business_abn" class="form-control" id="id_business_abn" placeholder="ABN or ACN" {% if customer.business_abn %}value="{{customer.business_abn}}"{% endif %}>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_privacy_policy" name="privacy_policy" {% if customer.privacy_policy %}checked{% endif %} required>
+                    <label class="form-check-label" for="id_privacy_policy">
+                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_terms_conditions" name="terms_conditions" {% if customer.terms_conditions %}checked{% endif %} required>
+                    <label class="form-check-label" for="id_terms_conditions">
+                        <a href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_promotions" name="promotions" {% if customer.promotions %}checked{% endif %}>
+                    <label class="form-check-label" for="id_promotions">
+                        Promotions
+                    </label>
+                </div>
+                <input class="d-none" type="checkbox" id="id_is_active" name="is_active" {% if customer.is_active %}checked{% endif %}>
+                <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary">Update Account</button> 
+                <button type="button" class="btn btn-dark" onclick="window.history.back();">Back</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function initMap() {
+    const componentForm = [
+        'location',
+    ];
+    const autocompleteInput = document.getElementById('id_address');
+    const autocomplete = new google.maps.places.Autocomplete(autocompleteInput, {
+        fields: ["address_components", "geometry", "name"],
+        types: ["address"],
+    });
+    autocomplete.setComponentRestrictions({
+        country: ["AU"],
+    });
+    autocomplete.addListener('place_changed', function () {
+        const place = autocomplete.getPlace();
+        if (!place.geometry) {
+            // User entered the name of a Place that was not suggested and
+            // pressed the Enter key, or the Place Details request failed.
+            // window.alert('No details available for input: \'' + place.name + '\'');
+            return;
+        }
+        fillInAddress(place);
+    });
+
+    function fillInAddress(place) {  // optional parameter
+        const addressNameFormat = {
+            'street_number': 'short_name',
+            'route': 'short_name',
+            'locality': 'long_name',
+            'administrative_area_level_1': 'short_name',
+            'country': 'short_name',
+            'postal_code': 'short_name',
+        };
+        const getAddressComp = function (type) {
+            for (const component of place.address_components) {
+                if (component.types[0] === type) {
+                    return component[addressNameFormat[type]];
+                }
+            }
+        return '';
+        };
+        document.getElementById('id_address').value = getAddressComp('street_number') + ' ' + getAddressComp('route') + ' ' + getAddressComp('locality') + ' ' + getAddressComp('administrative_area_level_1') + ' ' + getAddressComp('postal_code') + ' ' + getAddressComp('country');
+        for (const component of componentForm) {
+            // Location field is handled separately above as it has different logic.
+            if (component !== 'location') {
+                document.getElementById(component).value = getAddressComp(component);
+            }
+        }
+    }
+}
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYfuloZYC7wvMrfRxdmec2lRbwfSDZVP0&libraries=places&callback=initMap&solution_channel=GMP_QB_addressselection_v1_cA" async defer></script>
+
+{% endblock %}

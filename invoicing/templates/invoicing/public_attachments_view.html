@@ -1,0 +1,30 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+<div class="container p-0 mw-1200px">
+    <div class="card m-4 p-2 bg-light Regular shadow">
+        <div class="card-body">
+            <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+                {% for attach in attachments %}
+                <div class="m-1 card-body p-0 attachment-view">
+                    {% if "pdf" in attach.filename %}
+                    <embed style="max-width: 100%; max-height: 100%;" src="{{attach.file.url}}" type="application/pdf">
+                    {% else %}
+                    <img style="max-width: 100%; max-height: 100%;" class="m-auto" src="{{attach.file.url}}">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="text-center m-4">
+            <button type="button" class="btn btn-dark" onclick="window.history.back();">Back</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

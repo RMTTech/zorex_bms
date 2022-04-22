@@ -1,0 +1,95 @@
+{% load static %}
+
+        <nav id="id_navbar" class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <button type="button" class="navbar-toggler" onclick="window.history.back()">
+                    <span class="navbar-toggler-icon-back"></span>
+                </button>
+                <a class="navbar p-0" style="color: #dc3545;" href="{% url 'home_page' %}"><img id="id_sidebar_toggle" class="rounded" style="width: 50px; vertical-align: middle;" src="{% static 'frontend/images/newlogo.svg' %}"></a>
+                <button class="navbar-toggler position-relative" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon">
+                        <span id="notification_badge1" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-secondary fs-8" {% if not user.notifications.all.exists %}style="display: none;"{%endif%}>{% if user.notifications.all.exists %}{{user.notifications.all.count}}{% endif %}</span>
+                    </span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a id="nav_home" class="nav-link active position-relative" aria-current="page" href="{% url 'home_page' %}">Home
+                                <span id="notification_badge2" class=" badge rounded-pill bg-secondary fs-8" {% if not user.notifications.all.exists %}style="display: none;"{%endif%}">{% if user.notifications.all.exists %}{{user.notifications.all.count}}{% endif %}</span>
+                            </a>
+                        </li>
+                        {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a id="nav_calendar" href="{% url 'calendar' %}" class="nav-link">Calendar</a>
+                        </li>
+                        <li class="nav-item">
+                            <a id="nav_customers" href="{% url 'manage_customers' %}" class="nav-link">Customers</a>
+                        </li>
+                        <li class="nav-item">
+                            <a id="nav_invoicing" href="{% url 'invoicing' %}" class="nav-link">Invoices</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">More</a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a id="nav_how_to" class="dropdown-item" href="{% url 'how_to' %}">How To</a>
+                                <a id="nav_contact_us" class="dropdown-item" href="{% url 'contact_us' %}">Contact Us</a>
+                                <a id="nav_privacy_policy" class="dropdown-item" href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                                <a id="nav_terms_conditions" class="dropdown-item" href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {{user.name}}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a id="nav_profile" class="dropdown-item" href="{% url 'profile_page' user.id %}">My Profile</a></li>
+                                {% if user.is_admin %}
+                                <li><a id="nav_cron_job" class="dropdown-item" href="{% url 'crontab' %}">Cron Jobs</a></li>
+                                <li><a id="nav_subscripton_plans" class="dropdown-item" href="{% url 'plans' %}">Subscription Plans</a></li>
+                                {% endif %}
+                                <li><a id="nav_products" class="dropdown-item" href="{% url 'products' %}">Products</a></li>
+                                {% if user.is_parent %}
+                                <li><a id="nav_account_settings" class="dropdown-item" href="{% url 'gear' %}">Main Settings</a></li>
+                                {% endif %}
+                                {% if user.is_staff or user.is_parent %}
+                                <li><a id="nav_manage_accounts" class="dropdown-item" href="{% url 'manage_accounts' user.id %}">Manage Accounts</a></li>
+                                {% endif %}
+                                {% if user.is_parent %}
+                                <li><a id="nav_add_account" class="dropdown-item" href="{% if user.subscription.used_accounts >= user.subscription.plan.allowed_accounts %}{% url 'subscription' %}{% else %}{% url 'add_account' user.id %}{% endif %}">Add Employee Account</a></li>
+                                <li><a id="nav_manage_subscripton" class="dropdown-item" href="{% url 'subscription' %}">Manage Subscription</a></li>
+                                {% endif %}
+                                
+                                <a id="nav_logout" class="dropdown-item" href="{% url 'logout_view' %}">Logout</a>
+                            </ul>
+                        </li>
+                        
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" id="nav_login" href="{% url 'login_page' %}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="nav_register" href="{% url 'register' %}">Register Business Account</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">More</a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a id="nav_how_to" class="dropdown-item" href="{% url 'how_to' %}">How To</a>
+                                <a id="nav_contact_us" class="dropdown-item" href="{% url 'contact_us' %}">Contact Us</a>
+                                <a id="nav_privacy_policy" class="dropdown-item" href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                                <a id="nav_terms_conditions" class="dropdown-item" href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                            </div>
+                        </li>
+                        {% endif %}
+                        
+                    </ul>
+                    {% if request.user.is_authenticated %}
+                    <form class="d-flex" action="{% url 'search_customers' %}" method="GET">
+                        
+                        <input class="form-control me-2" type="search" id="id_q" name="q" placeholder="Search Customers" aria-label="Search">
+                        <button class="btn btn-outline-primary" type="submit">Search</button>
+                    </form>
+                    {%endif%}
+                </div>
+            </div>
+        </nav>
+

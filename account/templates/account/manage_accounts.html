@@ -1,0 +1,87 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+<div class="container p-0 mw-600px">
+    <div class="mx-4 my-1">
+        <form class="d-flex" action="{% url 'search_accounts' 'accounts' %}" method="GET">
+            <input class="form-control me-2" type="search" id="id_q" name="q" placeholder="Search Accounts" aria-label="Search">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </form>
+    </div>    
+</div>
+{% for account in accounts %}
+<div class="container p-0 mw-600px">
+    <div class="card mx-4 my-2 p-2 bg-light Regular shadow">
+        <div class="card-body p-2 py-0">
+            <div class="row m-0">
+                <div class="col-8 pe-0">
+                    Name: {{account.name}}<br>
+                    Email: {{account.email}}<br>
+                    Number: <a href="tel:{{account.number}}">{{account.number}}</a><br>
+                    Birthday: {{account.date_of_birth|date:"d M Y"}}<br>
+                    Last Login: {{account.last_login|date:"d M Y g:i A"}}<br>
+                    Color : {{account.color}} <div class="d-inline-block rounded-4 w-22px h-22px v-align-middle" style="background-color: {{account.color}} !important;"></div>
+                    <br>Jobs Allocated: {{account.jobs.count}}
+                    <br>{% if account.is_staff %}<img src="{% static 'account/images/tick.svg' %}" class="align-top w-24px">{% else %}<img src="{% static 'account/images/cross.svg' %}" class="align-top w-24px">{% endif %} Staff privileges
+                    {%if user.is_admin%}
+                    <br>{% if account.is_admin %}<img src="{% static 'account/images/tick.svg' %}" class="align-top w-24px">{% else %}<img src="{% static 'account/images/cross.svg' %}" class="align-top w-24px">{% endif %} Admin privileges
+                    {%endif%}
+                    <br>{%if account.is_active %}<img src="{% static 'account/images/tick.svg' %}" class="align-top w-24px"> Active Account{% else %}<img src="{% static 'account/images/cross.svg' %}" class="align-top w-24px"> InActive Account{% endif %}
+                </div>
+                <div class="col-4 p-0">
+                    <div class="float-end">
+                        <div class="container text-center px-0">
+                            <img src="{{account.profile_img.url}}" alt="" class="rounded-4 w-90 mx-auto"><br>
+                            {% if user.is_admin %}<a role="button" class="btn btn-outline-success mt-2 p-1 btn-sm" href="{% url 'profile_edit_page' account.id %}">Edit Account</a>{% endif %}
+                        </div>
+                        <div class="">
+                            <a role="button" class="btn btn-sm btn-info my-2 d-block" href="{% url 'profile_page' account.id %}">{{account.name}}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endfor %}
+<div class="d-block text-center">
+    <button type="button" class="btn btn-primary mx-auto my-3" onclick="addStaff()">Add Account</button> 
+    <button type="button" class="btn btn-dark" onclick="window.history.back();">Back</button>
+</div>
+
+{% if accounts.has_other_pages %}
+    <nav aria-label="...">
+        <ul class="pagination mx-0 px-0 justify-content-center">
+            {% if accounts.has_previous %}
+            <li class="page-item"><a class="page-link" href="?q={{ q }}&&page={{ accounts.previous_page_number }}">Previous</a></li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+            {% for i in accounts.paginator.page_range %}
+            {% if accounts.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="?q={{ q }}&&page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% if accounts.has_next %}
+            <li class="page-item"><a class="page-link" href="?q={{ q }}&&page={{ accounts.next_page_number }}">Next</a></li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+
+<script type="text/javascript">
+    function addStaff(){
+        window.location.href="{% url 'add_account' user.id %}";
+    }
+    
+</script>
+{% endblock %}

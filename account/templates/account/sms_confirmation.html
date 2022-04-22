@@ -1,0 +1,123 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+<div class="container mt-5 mw-500px">
+    <div class="card p-2 bg-light Regular shadow">
+        <div class="card-body">
+            <h2 class="text-center">Mobile Number Confirmation</h2>
+            <div class="text-center col-12">
+                <br>Your Mobile Number<br><span id="id_displayed_number">{{request.user.number}}</span>
+            </div>
+            <div class="col-12 text-center my-3">
+                <button type="button" class="btn btn-warning col-6" onclick="showUpdateNumber()">Change Number</button>
+            </div>
+            <div id="id_update_number_div" class="form-floating mb-3 d-none">
+                <input type="text" class="form-control" name="newnumber" maxlength="16" pattern="[0-9 -]{10,}" autofocus autocapitalize="none" id="id_newnumber">
+                <label for="id_newnumber">New Number</label>
+                <div class="col-12 text-center mt-3">
+                    <button type="button" class="btn btn-success col-6" onclick="updateNumber()">Update Number</button>
+                </div>
+            </div>
+            <form action="." method="POST" class="row g-3">{% csrf_token %}
+                <div class="col-12 text-center">
+                    <button type="button" class="btn btn-primary col-6" onclick="sendSMS()">Request a Code</button>
+                </div>
+                <div class="spinner-border text-primary d-none m-auto mt-3" role="status" id="id_loading_spinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" name="auth_code" autofocus autocapitalize="none" required id="id_auth_code">
+                    <label for="id_auth_code">Authentication Code</label>
+                </div>
+                <div class="col-12 text-center">
+                <button type="submit" class="btn btn-success col-6">Confirm</button>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    
+    let newnumberinput = document.getElementById("id_newnumber")
+    newnumberinput.addEventListener("keydown", function (e) {
+        if (e.code == "Enter" | e.code == "NumpadEnter"){
+            updateNumber();
+        }
+    })
+
+    function sendSMS(){
+        displayLoadingSpinner(true)
+        let requestData = {
+            'data':{{request.user.id}},
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+        };
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "{% url 'send_confirmation_text' %}",
+            data: requestData,
+            success: function(data){
+                if(data.result == 'success'){
+                    displayLoadingSpinner(false)
+                    showMessage('alert-success','Code has been sent through successfully')
+                }
+                else if(data.result == 'error'){
+                    displayLoadingSpinner(false)
+                    showMessage('alert-error','Something went wrong, please try again')
+                }
+            }
+        })
+    }
+
+    function showUpdateNumber(){
+        let updatenumberfield = document.getElementById("id_update_number_div")
+        if(updatenumberfield.classList[2] == 'd-none'){
+            updatenumberfield.classList.remove('d-none')
+            updatenumberfield.classList.add('d-block')
+        }
+        else{
+            updatenumberfield.classList.remove('d-block')
+            updatenumberfield.classList.add('d-none')
+        }
+    }
+
+    function updateNumber(){
+        let newNumber = document.getElementById("id_newnumber")
+        let requestData = {
+            data: {{request.user.id}},
+            newnumber: newNumber.value,
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+        }
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "{% url 'updatemobilenumber' %}",
+            data: requestData,
+            success: function(data){
+                if(data.result == 'success'){
+                    displayLoadingSpinner(false)
+                    showMessage('alert-success','Mobile number has been updated')
+                    let displayed_number = document.getElementById('id_displayed_number')
+                    displayed_number.innerText = data.newnumber
+                    newNumber.value = ""
+                    showUpdateNumber()
+                }
+                else if(data.result == 'error'){
+                    displayLoadingSpinner(false)
+                    showMessage('alert-error','Something went wrong, please try again')
+                    newNumber.value = ""
+                    showUpdateNumber()
+                }
+            }
+        })
+    }
+    
+</script>
+{% endblock %}

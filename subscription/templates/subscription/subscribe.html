@@ -1,0 +1,266 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+        
+{% if user.is_parent %}
+<div class="container pt-3 page-header">
+    <center>
+        <H2>Thank you {{user.name}} for Choosing our services</H2>
+    </center>
+</div>
+
+<div class="container p-2 mw-1400px">
+    <div class="d-flex flex-row justify-content-around flex-wrap">
+        <div class="card mw-400px mb-2">
+            <div class="card-header bg-dark page-header">
+                <h5 class="card-title text-center fs-3 m-auto">Bronze Subscription</h5>
+            </div>
+            <div class="card-body" style="min-height: 30rem;">
+                <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                    <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$9.95 AUD/month</span><br>
+                    $9.50 AUD/month<br>
+                    <span style="text-decoration: underline; color: cornflowerblue;">Limited time only</span>
+                </p>
+                <p class="card-text">Our Basic Subscription Level designed for small business owners who operate alone as a sole director or a sole trader</p>
+                <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                    <li>1 Business account</li>
+                    <li>Unlimited number of appointments</li>
+                    <li>Unlimited number of invoices</li>
+                    <li>100 Text/SMS Per Month</li>
+                    <li>Ability to customize SMS reminder</li>
+                    <li>Ability to customize OnApproach SMS</li>
+                    <li>1GB of Storage for your attachments</li>
+                </ul>
+                <p class="text-center fs-7">Click on the button below to Upgrade your Subscription</p>
+                <button class="btn text-center d-block m-auto {% if user.subscription.status == True and user.subscription.level == 'Bronze' and not user.subscription.cancelled %}disabled{% endif %}" style="width: 90%;">
+                    <div id="paypal-button-container-bronze"></div>
+                </button>
+            </div>
+        </div>
+        <div class="card mw-400px mb-2">
+            <div class="card-header bg-dark page-header">
+                <h5 class="card-title text-center fs-3 m-auto">Silver Subscription</h5>
+            </div>
+            <div class="card-body" style="min-height: 30rem;">
+                <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                    <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$24.45 AUD/month</span><br>
+                    $21.99 AUD/month<br>
+                    <span style="text-decoration: underline; color: cornflowerblue;">Limited time only</span>
+                </p>
+                <p class="card-text">Our Standard Subscription Level designed for small business owners who operates with one employee</p>
+                <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                    <li>1 Business account</li>
+                    <li>3 Employee accounts</li>
+                    <li>Unlimited number of appointments</li>
+                    <li>Unlimited number of invoices</li>
+                    <li>300 Text/SMS Per Month</li>
+                    <li>Ability to customize SMS reminder</li>
+                    <li>Ability to customize OnApproach SMS</li>
+                    <li>3GB of Storage for your attachments</li>
+                </ul>
+                <p class="text-center fs-7">Click on the button below to Upgrade your Subscription</p>
+                <button class="btn text-center d-block m-auto {% if user.subscription.status == True and user.subscription.level == 'Silver' and not user.subscription.cancelled %}disabled{% endif %}" style="width: 90%;">
+                    <div id="paypal-button-container-silver"></div>
+                </button>
+            </div>
+        </div>
+        <div class="card mw-400px mb-2">
+            <div class="card-header bg-dark page-header">
+                <h5 class="card-title text-center fs-3 m-auto">Gold Subscription</h5>
+            </div>
+            <div class="card-body" style="min-height: 30rem;">
+                <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                    <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$38.85 AUD/month</span><br>
+                    $34.99 AUD/month<br>
+                    <span style="text-decoration: underline; color: cornflowerblue;">Limited time only</span>
+                </p>
+                <p class="card-text">Our mid Subscription Level designed for small to medium businesses who operates with a limited number of Staff</p>
+                <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                    <li>1 Business account</li>
+                    <li>5 Employee accounts</li>
+                    <li>Unlimited number of appointments</li>
+                    <li>Unlimited number of invoices</li>
+                    <li>600 Text/SMS Per Month</li>
+                    <li>Ability to customize SMS reminder</li>
+                    <li>Ability to customize OnApproach SMS</li>
+                    <li>6GB of Storage for your attachments</li>
+                </ul>
+                <p class="text-center fs-7">Click on the button below to Upgrade your Subscription</p>
+                <button class="btn text-center d-block m-auto {% if user.subscription.status == True and user.subscription.level == 'Gold' and not user.subscription.cancelled %}disabled{% endif %}" style="width: 90%;">
+                    <div id="paypal-button-container-gold"></div>
+                </button>
+            </div>
+        </div>
+        <div class="card mw-400px mb-2">
+            <div class="card-header bg-dark page-header">
+                <h5 class="card-title text-center fs-3 m-auto">Platinum Subscription</h5>
+            </div>
+            <div class="card-body" style="min-height: 30rem;">
+                <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                    <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$66.85 AUD/month</span><br>
+                    $59.99 AUD/month<br>
+                    <span style="text-decoration: underline; color: cornflowerblue;">Limited time only</span>
+                </p>
+                <p class="card-text">Our Top Subscription Level designed for large businesses who operates with a large number of Staff</p>
+                <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                    <li>1 Business account</li>
+                    <li>10 Employee accounts</li>
+                    <li>Unlimited number of appointments</li>
+                    <li>Unlimited number of invoices</li>
+                    <li>1200 Text/SMS Per Month</li>
+                    <li>Ability to customize SMS reminder</li>
+                    <li>Ability to customize OnApproach SMS</li>
+                    <li>12GB of Storage for your attachments</li>
+                </ul>
+                <p class="text-center fs-7">Click on the button below to Upgrade your Subscription</p>
+                <button class="btn text-center d-block m-auto {% if user.subscription.status == True and user.subscription.level == 'Platinum' and not user.subscription.cancelled %}disabled{% endif %}" style="width: 90%;">
+                    <div id="paypal-button-container-platinum"></div>
+                </button>
+            </div>
+        </div>
+        <div class="card mw-400px mb-2 mobilecard" style="width: 400px;">
+            <div class="card-header bg-dark page-header">
+                <h5 class="card-title text-center fs-3 m-auto">Custom Subscription</h5>
+            </div>
+            <div class="card-body" style="min-height: 30rem;">
+                <p class="fs-4 text-center fw-bold">Build Your Own Customized Subscription</p>
+                <p class="card-text">Designed for Large businesses and Corporates</p>
+                <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                    <li>Custom number Business accounts</li>
+                    <li>Custom number of Employee accounts</li>
+                    <li>Unlimited number of appointments</li>
+                    <li>Unlimited number of invoices</li>
+                    <li>Custom number of text/SMS</li>
+                    <li>Ability to customize SMS reminder</li>
+                    <li>Ability to customize OnApproach SMS</li>
+                    <li>Custom Storage Capacity for your attachments</li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a role="button" class="btn btn-dark text-info fs-5 d-block py-4 fw-bold" href="{% url 'subscription_builder' %}">Click Here To Start Customizing</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- PAYPAL API -->
+<script src="https://www.paypal.com/sdk/js?client-id=AcSyFFHfg5nmx1jG-Zx9TDtGewNJGm3KaV9FXB4ECW_JPxRqxeKELVfE2P8beCNiJrHsvtZ974yoBJhk&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+
+<!-- SANDBOX PAYPAL API -->
+<!-- <script src="https://www.paypal.com/sdk/js?client-id=AV0oUVr4O203OPwdwKrJBNDgMeT5UquuRSEz4B2jYmoQLLHfMTFMquU3gQlJzwhx3AV80Usu1bm0bMHX&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script> -->
+<script>
+
+    paypal.Buttons({
+        style: {
+            shape: 'pill',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+        },
+        onInit: function(data, actions)  {
+            actions.disable();
+        },
+        onClick: function() {
+            subscribeTo('Bronze')
+        },
+        onApprove: function(data, actions) {
+        },
+        onCancel: function (data) {
+        }
+    }).render('#paypal-button-container-bronze'); // Renders the PayPal button
+    paypal.Buttons({
+        style: {
+            shape: 'pill',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+        },
+        onInit: function(data, actions)  {
+            actions.disable();
+        },
+        onClick: function() {
+            subscribeTo('Silver')
+        },
+        onApprove: function(data, actions) {
+        },
+        onCancel: function (data) {
+        }
+    }).render('#paypal-button-container-silver'); // Renders the PayPal button
+    paypal.Buttons({
+        style: {
+            shape: 'pill',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+        },
+        onInit: function(data, actions)  {
+            actions.disable();
+        },
+        onClick: function() {
+            subscribeTo('Gold')
+        },
+        onApprove: function(data, actions) {
+        },
+        onCancel: function (data) {
+        }
+    }).render('#paypal-button-container-gold'); // Renders the PayPal button
+    paypal.Buttons({
+        style: {
+            shape: 'pill',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+        },
+        onInit: function(data, actions)  {
+            actions.disable();
+        },
+        onClick: function() {
+            subscribeTo('Platinum')
+        },
+        onApprove: function(data, actions) {
+        },
+        onCancel: function (data) {
+        }
+    }).render('#paypal-button-container-platinum'); // Renders the PayPal button
+
+    function subscribeTo(planName){
+        payload = {
+            plan_name:planName,
+        },
+        $.ajax({
+            type: 'PUT',
+            datatype: 'json',
+            url: "{% url 'subscription_builder_api' %}",
+            data: payload,
+            headers: {"X-CSRFToken":"{{csrf_token}}"},
+            success: function(data){
+                showMessage('alert-success', "Subscription Update Requires Authorization");
+                if (data.link) {
+                    window.open(data.link);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', data.exception);
+            },
+        })
+    }
+
+
+</script>
+
+{%endif%}
+
+{% endblock %}

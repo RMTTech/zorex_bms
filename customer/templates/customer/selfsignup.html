@@ -1,0 +1,136 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block main %}
+<div class="m-auto mw-600px">
+    <div class="m-3">
+        <div class="card mt-2">
+            <div class="card-header p-2">
+                <h5 class="card-title text-center" id="id_modal_title">Customer Registeration Form</h5>
+            </div>
+            <form method="POST" class="card-body">{% csrf_token %}
+                <div class="row">
+                    <div class="col-sm-6 my-1">
+                        <label for="id_first_name">First name<span style="color: red;">*</span></label>
+                        <input type="text" name="first_name" maxlength="30" class="form-control" id="id_first_name" placeholder="First Name" required>
+                    </div>
+                    <div class="col-sm-6 my-1">
+                        <label for="id_last_name">Last name<span style="color: red;">*</span></label>
+                        <input type="text" name="last_name" maxlength="30" class="form-control" id="id_last_name" placeholder="Last Name" required>
+                    </div>
+                </div>
+                <div class="col-sm-12 my-2">
+                    <label for="id_email">Email<span style="color: red;">*</span></label>
+                    <input type="email" name="email" class="form-control" id="id_email" placeholder="Email" required>
+                </div>
+                <div class="col-sm-12 my-2">
+                    <label for="id_number">Mobile number<span style="color: red;">*</span></label>
+                    <input type="text" name="number" class="form-control" required id="id_number" maxlength="16" pattern="[0-9 -]{10,}" placeholder="Mobile Number">
+                </div>
+                <div class="col-sm-12 my-2">
+                    <label for="id_address">Address<span style="color: red;">*</span></label>
+                    <input type="text" name="address" class="form-control" id="id_address" placeholder="Address" required>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 my-1">
+                        <label for="id_address">Business Name</label>
+                        <input type="text" name="business_name" class="form-control" id="id_business_name" placeholder="Business Name">
+                    </div>
+                    <div class="col-sm-6 my-1">
+                        <label for="id_address">ABN/ACN</label>
+                        <input type="text" name="business_abn" class="form-control" id="id_business_abn" placeholder="ABN or ACN">
+                    </div>
+                </div>
+                <div class="form-check mx-3 my-2">
+                    <input class="form-check-input" type="checkbox" id="id_privacy_policy" name="privacy_policy" checked required>
+                    <label class="form-check-label" for="id_privacy_policy">
+                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                    </label>
+                </div>
+                <div class="form-check mx-3 my-2">
+                    <input class="form-check-input" type="checkbox" id="id_terms_conditions" name="terms_conditions" checked required>
+                    <label class="form-check-label" for="id_terms_conditions">
+                        <a href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                    </label>
+                </div>
+                <div class="form-check mx-3 my-2">
+                    <input class="form-check-input" type="checkbox" id="id_promotions" name="promotions" checked>
+                    <label class="form-check-label" for="id_promotions">
+                        Promotions
+                    </label>
+                </div>
+                <script src='https://www.google.com/recaptcha/api.js'></script>
+                <div class="g-recaptcha" data-sitekey="{{google_site_key}}"></div>
+                <div class="col-12 text-center">
+                    <button role="button" type="submit" class="btn btn-primary">Create Account</button> 
+                    <a role="button" type="cancel" class="btn btn-danger" href="{% url 'home_page' %}">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    
+    
+    function initMap() {
+        const componentForm = [
+            'location',
+        ];
+        const autocompleteInput = document.getElementById('id_address');
+        const autocomplete = new google.maps.places.Autocomplete(autocompleteInput, {
+            fields: ["address_components", "geometry", "name"],
+            types: ["address"],
+        });
+        autocomplete.setComponentRestrictions({
+            country: ["AU"],
+        });
+        autocomplete.addListener('place_changed', function () {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+                // User entered the name of a Place that was not suggested and
+                // pressed the Enter key, or the Place Details request failed.
+                // window.alert('No details available for input: \'' + place.name + '\'');
+                return;
+            }
+            console.log(place)
+            fillInAddress(place);
+        });
+  
+        function fillInAddress(place) {  // optional parameter
+            const addressNameFormat = {
+                'street_number': 'short_name',
+                'route': 'short_name',
+                'locality': 'long_name',
+                'administrative_area_level_1': 'short_name',
+                'country': 'short_name',
+                'postal_code': 'short_name',
+            };
+            const getAddressComp = function (type) {
+                for (const component of place.address_components) {
+                    if (component.types[0] === type) {
+                        return component[addressNameFormat[type]];
+                    }
+                }
+            return '';
+            };
+            document.getElementById('id_address').value = getAddressComp('street_number') + ' ' + getAddressComp('route') + ' ' + getAddressComp('locality') + ' ' + getAddressComp('administrative_area_level_1') + ' ' + getAddressComp('postal_code') + ' ' + getAddressComp('country');
+            for (const component of componentForm) {
+                // Location field is handled separately above as it has different logic.
+                if (component !== 'location') {
+                    document.getElementById(component).value = getAddressComp(component);
+                }
+            }
+        }
+    }
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYfuloZYC7wvMrfRxdmec2lRbwfSDZVP0&libraries=places&callback=initMap&solution_channel=GMP_QB_addressselection_v1_cA" async defer></script>
+
+{% endblock %}

@@ -1,0 +1,11 @@
+# Notice: Collection of data on RMTelecom through automated means is
+# prohibited unless you have express written permission from RM Telecom
+# and may only be conducted for the limited purpose contained in said
+# permission.
+
+User-agent: *
+Allow: /
+Disallow: /files
+# Disallow: /account
+
+sitemap: https://zorex.com.au/sitemap.xml

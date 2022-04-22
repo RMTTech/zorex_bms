@@ -1,0 +1,24 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+
+{% block description %}{% endblock %}
+{% block title %}Zorex 500 Page Not Found{% endblock %}
+
+{% block main %}
+
+<div class="container">
+    <div class="mobilecard m-auto">
+        <div class="card shadow bg-light" style="margin-top: 30%;">
+            <h5 class="text-center card-header">Information Message</h5>
+            <div class="card-body py-5 text-center">
+                <span class="h3">Error 500<br><br>Server Error, Please Try Again!</span>
+                <br><br>
+                <span class="h5">Please report this error to us</span><br><br>
+                <a class="btn btn-primary" href="mailto:support@zorex.com.au">Email Us</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

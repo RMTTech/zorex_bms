@@ -1,0 +1,761 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+<h2 class="text-center m-2">
+    <select class="float-start fs-6" name="quantity" id="invoices_quantity" onchange="quantitySelector()">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="15" selected>15</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+        <option value="75">75</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
+    </select>
+    <span class="page-header">Invoicing Dashboard</span>
+    <form class="d-flex invoicing-seachbar" onsubmit="return searchV()" method="GET">
+        <input class="form-control me-2" type="text" id="search_input" name="q" placeholder="Search Invoices">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+</h2>
+<div class="m-1 position-relative">
+    <div id="invoicing_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+        <div class="position-absolute top-50 start-50 translate-middle">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+    <div class="card shadow bg-light table-responsive" style="min-height: 50vh;">
+        <table class="table table-striped fs-7 table-bordered table-sm" id="invoicing_table">
+            <thead class="card-header bg-dark page-header">
+                <tr>
+                    <th scope="col" style="width: 110px; min-width: 110px; vertical-align: middle;" role="button">
+                        <span class="d-inline-block" style="width: 75px;" onclick="sortTable(0)">Title</span>
+                        <button class="dropdown-toggle float-end id_add_row" style="border: none; background: none; padding: 0.2rem; color: black;" onclick="titleDropdownMenu()"></button>
+                        <div id="title-dropdown" class="dropdown-menu" style="min-width: 60px;">
+                            <div class="form-check form-switch mx-3 pb-1">
+                                <input checked class="form-check-input" role="button" type="checkbox" id="Invoice-checkbox" onchange="filterInvoices('Invoice')">
+                                <label class="form-check-label" for="Invoice-checkbox" role="button"> Invoice</label>
+                            </div>
+                            <div class="form-check form-switch mx-3 pt-1" role="button">
+                                <input checked class="form-check-input" type="checkbox" role="button" id="Quote-checkbox" onchange="filterInvoices('Quote')">
+                                <label class="form-check-label" for="Quote-checkbox" role="button"> Quote</label>
+                            </div>
+                            <div class="form-check form-switch mx-3 pt-1" role="button">
+                                <input class="form-check-input" type="checkbox" role="button" id="Notes_checkbox" onchange="notesCheckbox()">
+                                <label class="form-check-label" for="Notes_checkbox" role="button"> Notes</label>
+                            </div>
+                            <div class="form-check form-switch mx-3 pt-1" role="button">
+                                <input checked class="form-check-input" type="checkbox" role="button" id="checkboxes_checks" onchange="checkBoxesCheck()">
+                                <label class="form-check-label" for="checkboxes_checks" role="button" style="white-space: nowrap;"> Select All</label>
+                            </div>
+                        </div>
+                    </th>
+                    <th scope="col" style="vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(1)">Customer</span></th>
+                    <th scope="col" style="min-width: 180px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(2)">Address</span></th>
+                    <th scope="col" style="min-width: 70px; vertical-align: middle;" class="notes d-none"><span class="d-block" role="button" onclick="sortTable(3)">Notes</span></th>
+                    <th scope="col" style="text-align: center; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(4)">Total</span></th>
+                    <th scope="col" style="text-align: center; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(5)">Outstanding</span></th>
+                    <th scope="col" style="min-width: 90px; vertical-align: middle;" class="text-center"><span class="d-block" role="button" onclick="sortTable(6)">Due Date</span></th>
+                    <th scope="col" class="text-center align-middle"><span class="d-block" role="button" onclick="sortTable(7)">Status</span></th>
+                    <th scope="col" style="width: 75px; vertical-align: middle;"><a role="button" class="btn btn-sm btn-success fs-8" href="{% url 'create_new_invoice' %}">+Invoice</a></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr id="id_invoice_row{{forloop.counter}}" style="white-space: nowrap;">
+                    <td scope="row">
+                        <input type="checkbox" class="form-check-input" checked style="vertical-align: text-top;" id="checkboxes{{forloop.counter}}" onchange="sumCheckboxes()">
+                        <a id="invoicetitlebutton{{invoice.id}}" role="button" class="btn btn-sm {% if invoice.title == 'Quote' %}
+                        {% if invoice.quote_status.status == '' or invoice.quote_status.status == None %}btn-secondary{% else %}
+                        {% if invoice.quote_status.status == True %}btn-info{% else %}btn-warning{% endif %}{% endif %}
+                        {% elif invoice.title == 'Invoice' %}{% if invoice.payment_status %}btn-success{% else %}btn-primary{% endif %}{% endif %}" href="{% url 'update_invoice' invoice.id 'invoicing' %}">{{invoice.title}} {{invoice.invoice_no}}</a>
+                    </td>
+                    <td><a role="button" class="btn btn-sm btn-secondary rounded-3 fs-8" href="{% url 'customer_dashboard' invoice.customer.id %}">{{invoice.customer.name}}</a></td>
+                    <td style="white-space: nowrap;">{{invoice.customer.address}}</td>
+                    <td style="max-width: 250px; width: 200px;" class="notes d-none"><div class="table-responsive">{{invoice.note}}</div></td>
+                    <td style="text-align: right;">$ <span id="id_total_value{{forloop.counter}}">{{invoice.total_value}}</span></td>
+                    <td style="text-align: right;">$ <span id="id_balance_due{{forloop.counter}}">{{invoice.balance_due}}</span></td>
+                    <td class="text-center"><span class="d-none" id="{{invoice.due_date|date:'Ymd'}}"></span>{{invoice.due_date|date:"d M Y"}}</td>
+                    <td class="text-center"><span id="id_payment_status{{invoice.id}}">
+                        {% if invoice.title == "Quote" %}
+                        {% if invoice.quote_status.status == True %}
+                        <span style="color: green;">Accepted</span>{%endif%}
+                        {% if invoice.quote_status.status == False %}
+                        <spand style="color: red;">Rejected</spand>{% endif %}
+                        {% if invoice.quote_status.status == "" or invoice.quote_status.status == None %}
+                        <spand style="color: rgb(255, 115, 0);">Un-decided</spand>{% endif %}
+                        {%else%}
+                        {% if invoice.payment_status %}<span style="color: green;">Paid</span>{%else%}<spand style="color: red;">UnPaid</spand>{%endif%}
+                        {% endif %}</span></td>
+                    <td scope="row" style="text-align: center; position: relative !important;">
+                        <button role="button" class="btn btn-sm btn-secondary dropdown-toggle" onclick="showMore({{invoice.id}})" onblur="hideShowMore({{invoice.id}})" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">More</button>
+                        <div class="more_menu list-group position-absolute" style="display: none; background-color: ghostwhite; right: 2px; z-index: 1; border: 1px solid #c7c7c7;" id="id_more_menu{{invoice.id}}">
+                            {% if invoice.title == "Quote" %}
+                            <a role="button" class="dropdown-item fs-6"
+                            onclick="resetQuote('{{invoice.public_link}}')">Reset</a><hr style="margin:0px;">
+                            {% else %}
+                            <a role="button" id="id_paidinfull_button{{invoice.id}}" {% if invoice.payment_status %}class="disabled dropdown-item fs-6"{% else %}class="dropdown-item fs-6"{%endif%} onclick="paidInFull({{invoice.id}},{{forloop.counter}})">Paid</a><hr style="margin:0px;">
+                            {% endif %}
+                            <a role="button" class="dropdown-item fs-6" href="{% url 'update_invoice' invoice.id 'invoicing' %}">Edit</a><hr style="margin:0px;">
+                            <a role="button" target="_blank" class="dropdown-item fs-6" href="{% url 'download_invoice' invoice.id %}">Download</a><hr style="margin:0px;">
+                            <a role="button" class="dropdown-item fs-6" onclick="invoiceEmailURL({{invoice.id}})">Send</a><hr style="margin:0px;">
+                            <a role="button" class="dropdown-item fs-6" onclick="invoiceHistoryFunc({{invoice.id}})" data-bs-toggle="modal" data-bs-target="#history_window">History</a><hr style="margin:0px;">
+                            <a role="button" class="dropdown-item fs-6" onclick="invoiceDeleteFunc({{invoice.id}},{{forloop.counter}})">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="text-end" style="white-space: nowrap;">
+                    <td colspan="3" class="text-start">Selected Invoices Total $ <span id="sum_total_checked"></span> - outstanding $ <span id="sum_outstanding_checked"></span></td>
+                    <td class="notes d-none"></td>
+                    <td>$ <span id="sum_total"></span></td>
+                    <td class="text-warning">$ <span id="sum_outstanding"></span></td>
+                    <td colspan="3"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<div id="id_confirmation_window" class="d-none modal backdrop" id="exampleModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Confirmation Required</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close" id="id_confirmation_window_cancel"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to Delete the Invoice?
+            </div>
+            <div class="modal-footer">
+                <div class="m-auto">
+                    <button type="button" class="btn btn-primary" id="id_confirmation_window_confirm">Delete</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="id_confirmation_window_cancel1">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="id_loading_spinner" class="backdrop modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+{% if invoices.has_other_pages %}
+<nav aria-label="...">
+    <ul class="pagination mx-0 px-0 justify-content-center">
+        {% if invoices.has_previous %}
+        <li class="page-item"><a role="button" class="page-link" onclick="previous()">Previous</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        {% for i in invoices.paginator.page_range %}
+        {% if invoices.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% else %}
+            <li class="page-item"><a role="button" class="page-link" onclick="page({{i}})">{{ i }}</a></li>
+        {% endif %}
+        {% endfor %}
+        {% if invoices.has_next %}
+        <li class="page-item"><a role="button" class="page-link" onclick="next()">Next</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div class="d-block text-center my-2">
+    <a role="button" class="btn btn-success" href="{% url 'create_new_invoice' %}">Create New Invoice</a>
+</div>
+<div class="d-block text-center my-2">
+    <input type="date" name="start" id="start_date" style="vertical-align: middle;">
+    <input type="date" name="end" id="end_date" style="vertical-align: middle;">
+    <button class="btn btn-sm btn-primary my-2" style="vertical-align: middle;" onclick="invoicesNewRange()">Update</button>
+</div>
+<!-- Invoice History -->
+<div class="modal fade" id="history_window" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered mw-800px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Invoice History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body table-responsive p-0">
+                <div style="position: absolute; width: 100%; height: 100%;" id="invoicehistory_loading_spinner" class="backdrop index-2" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <table class="table table-sm table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <td>Details</td>
+                            <td>Date</td>
+                            <td>Done By</td>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice_history_table">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary m-auto" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+function invoicingSpinner(status){
+    if (status){
+        $("#invoicing_loading_spinner").show()
+    }else{
+        $("#invoicing_loading_spinner").hide()
+    }
+}
+
+const urlParams = new URLSearchParams(window.location.search)
+if (urlParams.has('quantity')){
+    qty = urlParams.get('quantity')
+    $("#invoices_quantity")[0].value = qty;
+}
+
+// Invoices Date Range Handler
+function setRange(){
+    if (!urlParams.has('start_date')){
+        $("#start_date")[0].value = "2021-07-01";
+    }else{
+        $("#start_date")[0].value = urlParams.get('start_date');
+    }
+    if (!urlParams.has('end_date')){
+        var date = new Date();
+        currentdate = (date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, '0') + "-" + date.getDate().toString().padStart(2, '0'));
+        $("#end_date")[0].value = currentdate;
+    }else{
+        $("#end_date")[0].value = urlParams.get('end_date');
+    }
+}
+function invoicesNewRange(){
+    window.location.href="{% url 'search_invoices' %}?q={{ q }}&&page=1&&quantity=" + $("#invoices_quantity")[0].value + "&&start_date=" + $("#start_date")[0].value + "&&end_date=" + $("#end_date")[0].value;
+}
+
+setRange();
+
+// Quantity Selectory
+{% if invoices.has_other_pages %}
+
+function next(){
+    {% if invoices.has_next %}
+    let qty = $("#invoices_quantity")[0].value
+    window.location.href="?q={{ q }}&&page={{ invoices.next_page_number }}&&quantity=" + qty + "&&start_date=" + $("#start_date")[0].value + "&&end_date=" + $("#end_date")[0].value
+    {%endif%}
+}
+function previous(){
+    {% if invoices.has_previous %}
+    let qty = $("#invoices_quantity")[0].value
+    window.location.href="?q={{ q }}&&page={{ invoices.previous_page_number }}&&quantity=" + qty + "&&start_date=" + $("#start_date")[0].value + "&&end_date=" + $("#end_date")[0].value
+    {%endif%}
+}
+function page(pageID){
+    let qty = $("#invoices_quantity")[0].value
+    window.location.href="?q={{ q }}&&page=" + pageID + "&&quantity=" + qty + "&&start_date=" + $("#start_date")[0].value + "&&end_date=" + $("#end_date")[0].value
+}
+{% endif %}
+function quantitySelector(){
+    let qty = $("#invoices_quantity")[0].value
+    window.location.href="?q={{ q }}&&page=1&&quantity=" + qty + "&&start_date=" + $("#start_date")[0].value + "&&end_date=" + $("#end_date")[0].value;
+}
+function searchV(){
+    window.location.href="{% url 'search_invoices' %}?q=" + $("#search_input")[0].value + "&&page=1&&quantity=" + $("#invoices_quantity")[0].value + "&&start_date=" + $("#start_date")[0].value + "&&end_date=" + $("#end_date")[0].value;
+    return false;
+}
+
+function notesCheckbox(){
+    let table = document.getElementById('invoicing_table');
+    let rows = table.rows;
+    if ($("#Notes_checkbox")[0].checked){
+        for (i=0;i<rows.length;i++){
+            $(".notes")[i].classList.remove('d-none')
+        }
+    }else{
+        for (i=0;i<rows.length;i++){
+            $(".notes")[i].classList.add('d-none')
+        }
+    }
+    $("#title-dropdown").hide(200);
+}
+
+function checkBoxesCheck(){
+    let table = document.getElementById('invoicing_table');
+    let rows = table.rows;
+    if ($("#checkboxes_checks")[0].checked){
+        for (i=1;i<rows.length -1;i++){
+            $("#checkboxes" + i)[0].checked = true;
+        }
+    }else{
+        for (i=1;i<rows.length -1;i++){
+            $("#checkboxes" + i)[0].checked = false;
+        }
+    }
+    sumTotal();
+    sumOutstanding();
+    sumCheckboxes();
+    $("#title-dropdown").hide(200);
+}
+// Sum Total and Outstanding
+function sumCheckboxes(){
+    let table = document.getElementById("invoicing_table");
+    let rows = table.rows;
+    let total = 0.0;
+    let outstanding = 0.0;
+    for (i=1;i<rows.length - 1;i++){
+        if ($("#id_invoice_row" + i)[0] != null && !$("#id_invoice_row" + i)[0].classList.contains('d-none') && $("#checkboxes" + i)[0].checked){
+            total = parseFloat(total) + parseFloat($("#id_total_value" + i)[0].innerText)
+            outstanding = parseFloat(outstanding) + parseFloat($("#id_balance_due" + i)[0].innerText)
+        }
+    }
+    $("#sum_total_checked")[0].innerText = total.toFixed(2);
+    $("#sum_outstanding_checked")[0].innerText = outstanding.toFixed(2);
+}
+function sumTotal(){
+    let table = document.getElementById("invoicing_table");
+    let rows = table.rows;
+    let total = 0.0;
+    for(i=0;i<rows.length;i++){
+        if ($("#id_total_value" + i)[0] != null && !$("#id_total_value" + i)[0].parentElement.parentElement.classList.contains("d-none")){
+            total = parseFloat(total) + parseFloat($("#id_total_value" + i)[0].innerText)
+        }
+    }
+    $("#sum_total")[0].innerText = total.toFixed(2);
+}
+function sumOutstanding(){
+    let table = document.getElementById("invoicing_table")
+    let rows = table.rows
+    let total = 0.0
+    for(i=0;i<rows.length;i++){
+        if ($("#id_balance_due" + i)[0] != null && !$("#id_balance_due" + i)[0].parentElement.parentElement.classList.contains("d-none")){
+            total = parseFloat(total) + parseFloat($("#id_balance_due" + i)[0].innerText)
+        }
+        // console.log($("#id_total_value" + i)[0])
+    }
+    $("#sum_outstanding")[0].innerText = total.toFixed(2);
+}
+
+sumOutstanding();
+sumTotal();
+sumCheckboxes();
+// Invoice History
+function invoiceHistoryLoadingSpinner(status){
+    if (status){
+        $("#invoicehistory_loading_spinner").show()
+    }else{
+        $("#invoicehistory_loading_spinner").hide()
+    }
+}
+function invoiceHistoryFunc(invoiceId){
+    invoiceHistoryLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        inv_id: invoiceId,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'invoice_history' %}",
+        data: payload,
+        success: function(data){
+            if (data[data.length - 1].result == "success"){
+                let table = document.getElementById('invoice_history_table')
+                while (table.lastChild) {
+                    table.removeChild(table.lastChild);
+                }
+                for( i = 0; i < data.length - 1; i++){
+                    addHistoryRow(data[i])
+                }
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', 'Something went wrong Please contact the system Admin.');
+            }
+        },
+        error: function(data){
+            showMessage('alert-error','Please check your internet and try again!');
+        },
+        complete: function(data){
+            invoiceHistoryLoadingSpinner(false);
+        },
+    })
+}
+function addHistoryRow(data){
+    console.log(data)
+    let table = document.getElementById('invoice_history_table')
+
+    row = document.createElement("tr")
+
+    td1 = document.createElement("td")
+    td1.innerText = data.details
+
+    td2 = document.createElement("td")
+    td2.innerText = data.update_date
+
+    td3 = document.createElement("td")
+    td3.innerText = data.update_by
+
+    row.appendChild(td1)
+    row.appendChild(td2)
+    row.appendChild(td3)
+    table.appendChild(row)
+
+}
+
+//More Menu
+function showMore(invID){
+    mM = $("#id_more_menu" + invID)
+    mMtext = new String(mM[0].style.cssText)
+    moreMenu = $(".more_menu")
+    if (mMtext.includes('none')){               /// test if the Div is hidden then do ... and show the selected///
+        moreMenu.hide(duration=200);
+        mM.show(duration=300);
+    }
+    else{
+        moreMenu.hide(duration=200);
+    }
+}
+function invoiceEmailURL(invID){
+    if(invID){
+        displayLoadingSpinner(true)
+        invoiceData = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            inv_id: invID,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'send_invoice' %}",
+            data: invoiceData,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', "Invoice has been Sent successfully");
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                displayLoadingSpinner(false);
+                showMore(invID);
+            }
+        })
+    }
+}
+function invoiceDeleteFunc(invoiceId, forCounter){
+    let confWindow = document.getElementById('id_confirmation_window');
+    let confWindowConfirm = document.getElementById('id_confirmation_window_confirm');
+    let confWindowCancel = document.getElementById('id_confirmation_window_cancel');
+    let confWindowCancel1 = document.getElementById('id_confirmation_window_cancel1');
+    confWindow.classList.remove('d-none');
+    confWindow.classList.add('d-block');
+    confWindowCancel.addEventListener('click',()=>{
+        confWindow.classList.add('d-none');
+    });
+    confWindowCancel1.addEventListener('click',()=>{
+        confWindow.classList.add('d-none');
+    });
+    confWindowConfirm.onclick = function(){
+        if(invoiceId){
+            invoiceData = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                invoice_id: invoiceId,
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'delete_invoice' %}",
+                data: invoiceData,
+                success: function(data){
+                    if(data.result == "success"){
+                        document.getElementById("id_invoice_row" + forCounter).classList.add('d-none');
+                        showMessage('alert-success', "Invoice has been deleted successfully");
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error', "Please check your internet connection and try again!");
+                },
+                complete: function(data){
+                    confWindow.classList.add('d-none');
+                    sumTotal();
+                    sumOutstanding();
+                    sumCheckboxes();
+                },
+            })
+        }
+    }
+}
+function paidInFull(invID, rowID){
+    var totalValue = document.getElementById('id_total_value' + rowID);
+    displayLoadingSpinner(true)
+    invoiceData = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        invoice_id: invID,
+        amount_received: totalValue.innerText,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'invoice_payment_update' %}",
+        data: invoiceData,
+        success: function(data){
+            if(data.result == "success"){
+                showMessage('alert-success', "Invoice Updated");
+                document.getElementById('id_balance_due' + rowID).innerText = "0.00";
+                document.getElementById('id_payment_status' + invID).innerHTML = '<span style="color: green;">Paid</span>';
+                document.getElementById('id_paidinfull_button' + invID).classList.add('disabled');
+                $("#invoicetitlebutton" + invID)[0].classList.remove("btn-primary")
+                $("#invoicetitlebutton" + invID)[0].classList.add("btn-success")
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(data){
+            displayLoadingSpinner(false);
+            sumTotal();
+            sumOutstanding();
+            sumCheckboxes();
+            showMore(invID);
+        },
+    })
+}
+function hideShowMore(invID){
+    var mM = $("#id_more_menu" + invID)[0];
+    document.addEventListener('click', function( event ) {
+        if (mM != event.target && !mM.innerText.includes(event.target)) {
+            mM.style.display="none"
+        }
+    }, {once:true});
+}
+
+function resetQuote(public_link){
+    displayLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        public_code: public_link,
+        status: 2,
+    };
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'public_ajax_quotestatus' %}",
+        data: payload,
+        success: function(data){
+            if(data.result == "success"){
+                showMessage('alert-success', "Quote have been Reset");
+                window.location.reload();
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(){
+            displayLoadingSpinner(false);
+        }
+    })
+}
+
+//table filtering and sorting
+function sortTable(n) {
+    invoicingSpinner(true);
+    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+    table = document.getElementById("invoicing_table");
+    switching = true;
+    dir = "asc";
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 2); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+            if (dir == "asc") {
+                if ( n == 0 ) {
+                    if (x.innerText.slice(x.innerText.length-4) > y.innerText.slice(y.innerText.length-4)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }else if ( n == 4 || n == 5 ){
+                    if (parseFloat(x.innerText.slice(2)) > parseFloat(y.innerText.slice(2))) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }else if ( n == 6 ){
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }else{
+                    if (x.innerText.toLowerCase() > y.innerText.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            } else if (dir == "desc") {
+                if ( n == 0 ) {
+                    if (x.innerText.slice(x.innerText.length-4) < y.innerText.slice(y.innerText.length-4)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }else if ( n == 4 || n == 5 ){
+                    if (parseFloat(x.innerText.slice(2)) < parseFloat(y.innerText.slice(2))) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }else if ( n == 6 ){
+                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }else{
+                    if (x.innerText.toLowerCase() < y.innerText.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount ++;
+        } else {
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+    invoicingSpinner(false);
+}
+function titleDropdownMenu(){
+    if ($("#title-dropdown").is(":visible")){
+        $("#title-dropdown").hide(200)
+    }else{
+        $("#title-dropdown").show(200)
+    }
+}
+function filterInvoices(TAG){
+    let table = document.getElementById("invoicing_table");
+    let i, rows;
+    rows = table.rows;
+    if ($("#"+TAG+"-checkbox")[0].checked){
+        for (i = 1; i < (rows.length); i++) {
+            cell0 = rows[i].getElementsByTagName("a")[0];
+            if(cell0 != null){
+                if ( cell0.innerText.includes(TAG) ){
+                    rows[i].classList.remove("d-none");
+                }
+            }
+            
+        }
+    }else{
+        for (i = 1; i < (rows.length); i++) {
+            cell0 = rows[i].getElementsByTagName("a")[0];
+            if(cell0 != null){
+                if ( cell0.innerText.includes(TAG) ){
+                    rows[i].classList.add("d-none");
+                }
+            }
+        }
+    }
+    sumOutstanding();
+    sumTotal();
+    sumCheckboxes();
+    $("#title-dropdown").hide(200);
+}
+const invTable = document.getElementById("invoicing_table");
+resizableGrid(invTable)
+function resizableGrid(table) {
+    var row = table.getElementsByTagName('tr')[0],
+    cols = row ? row.children : undefined;
+    if (!cols) return;
+    for (var i=0;i<cols.length;i++){
+        var div = createDiv(table.offsetHeight);
+        cols[i].appendChild(div);
+        cols[i].style.position = 'relative';
+        setListeners(div);
+    }
+}
+function createDiv(height){
+    var div = document.createElement('div');
+    div.style.top = 0;
+    div.style.right = 0;
+    div.style.width = '5px';
+    div.style.position = 'absolute';
+    div.style.cursor = 'col-resize';
+    /* remove backGroundColor later */
+    // div.style.backgroundColor = 'red';
+    div.style.userSelect = 'none';
+    /* table height */
+    div.style.height = height+'px';
+    return div;
+}
+function setListeners(div){
+    var pageX,curCol,nxtCol,curColWidth,nxtColWidth;
+    div.addEventListener('mousedown', function (e) {
+        curCol = e.target.parentElement;
+        nxtCol = curCol.nextElementSibling;
+        pageX = e.pageX;
+        curColWidth = curCol.offsetWidth
+        if (nxtCol)
+            nxtColWidth = nxtCol.offsetWidth
+    });
+
+    document.addEventListener('mousemove', function (e) {
+    if (curCol) {
+        var diffX = e.pageX - pageX;
+
+        if (nxtCol)
+            nxtCol.style.width = (nxtColWidth - (diffX))+'px';
+
+        curCol.style.width = (curColWidth + diffX)+'px';
+        }
+    });
+
+    document.addEventListener('mouseup', function (e) { 
+        curCol = undefined;
+        nxtCol = undefined;
+        pageX = undefined;
+        nxtColWidth = undefined;
+        curColWidth = undefined;
+    });
+}
+
+</script>
+
+{% endblock %}

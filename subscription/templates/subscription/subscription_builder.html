@@ -1,0 +1,280 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+
+<div class="container p-2 mt-1 mw-1000px">
+    <div class="card bg-light shadow">
+        <div class="card-header bg-dark page-header">
+            <h4 class="card-title text-center m-auto fst-italic fw-bolder">Custom Plan Builder</h4>
+        </div>
+        <div class="card-body px-4">
+            <div class="text-center fw-bold fs-5">Accounts</div>
+            <div class="row my-2">
+                <div class="col-sm-6">
+                    <label for="business_account">Business Account</label>
+                    <select id="business_account" name="business_account" class="form-select" aria-label=".form-select" required disabled>
+                        <option value="1" selected>1</option>
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label for="employee_account">Employee Accounts 
+                        <svg data-bs-toggle="tooltip" data-bs-placement="top" title="the first 3 are $2.5 AUD/Account, the next 2 are $2.4 AUD/Account, the next 2 are $2.3 AUD/Account, the next 3 are $2.2 AUD/Account, the next 10 are $2.1 AUD/Account, the next 20 are $2 AUD/Account," xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 20 20">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
+                        </svg>
+                    </label>
+                    <select id="employee_account" name="employee_account" class="form-select" aria-label=".form-select" required onchange="calculatePrice()">
+                        <option value="0" selected>0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
+                        <option value="32">32</option>
+                        <option value="33">33</option>
+                        <option value="34">34</option>
+                        <option value="35">35</option>
+                        <option value="36">36</option>
+                        <option value="37">37</option>
+                        <option value="38">38</option>
+                        <option value="39">39</option>
+                        <option value="40">40</option>
+                    </select>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center fw-bold fs-5">SMS Messages</div>
+            <div class="col-12 my-2">
+                <label for="messages">Please choose a package that best suits your needs:
+                    <svg data-bs-toggle="tooltip" data-bs-placement="top" title="the first 100 are $0.02c/sms, the next 200 are $0.017c/sms, the next 300 are $0.015c/sms, the next 300 are $0.013c/sms, the next 300 are $0.012c/sms, the next 300 are $0.010c/sms, the next 1500 are $0.009c/sms, the next 3000 are $0.008c/sms, the next 2000 are $0.007c/sms, the next 2000 are $0.005c/sms" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 20 20">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
+                    </svg>
+                </label>
+                <select id="messages" name="messages" class="form-select" aria-label=".form-select" required onchange="calculatePrice()">
+                    <option value="100" selected>100 SMS/month</option>
+                    <option value="300">300 SMS/month</option>
+                    <option value="600">600 SMS/month</option>
+                    <option value="900">900 SMS/month</option>
+                    <option value="1200">1,200 SMS/month</option>
+                    <option value="1500">1,500 SMS/month</option>
+                    <option value="3000">3,000 SMS/month</option>
+                    <option value="6000">6,000 SMS/month</option>
+                    <option value="8000">8,000 SMS/month</option>
+                    <option value="10000">10,000 SMS/month</option>
+                </select>
+            </div>
+            <hr>
+            <div class="text-center fw-bold fs-5">Storage Space</div>
+            <div class="col-12 my-2">
+                <label for="storage">Please choose an option that best suits your needs: 
+                    <svg data-bs-toggle="tooltip" data-bs-placement="top" title="the first 0.5GB are $2 AUD/GB, the next 0.5GB are 1.9 AUD/GB, the next 2GB are 1.8 AUD/GB, the next 3GB are 1.4 AUD/GB, the next 3GB are 1.2 AUD/GB, the next 3GB are 1.1 AUD/GB, the next 6GB are 1 AUD/GB, the next 82GB are 0.8 AUD/GB," xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 20 20">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
+                    </svg>
+                </label>
+                <select id="storage" name="storage" class="form-select" aria-label=".form-select" required onchange="calculatePrice()">
+                    <option value="0.5">0.5GB</option>
+                    <option value="1" Selected>1GB</option>
+                    <option value="3">3GB</option>
+                    <option value="6">6GB</option>
+                    <option value="9">9GB</option>
+                    <option value="12">12GB</option>
+                    <option value="15">15GB</option>
+                    <option value="18">18GB</option>
+                    <option value="20">20GB</option>
+                    <option value="30">30GB</option>
+                    <option value="50">50GB</option>
+                    <option value="100">100GB</option>
+                </select>
+            </div>
+            <div class="my-4 text-center position-relative">
+                <div id="price_loading_spinner" style="position: absolute; width: 100%; height: 100%;" class="modal backdrop index-2 rounded-3" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="discount_div" class="fs-5 fw-bold" style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$<span id="original_div"></span> AUD/month</div>
+                <div id="discount_note">Limited Time Only</div>
+                <div id="price_div" class="fs-3 fw-bold" style="color: green;">$<span id="price"></span> AUD/month</div>
+            </div>
+        </div>
+        <div class="card-footer col-12 text-center bg-dark page-header">
+            <button type="submit" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#id_confirmation_window" onclick="planConfirmationWindow(true)">Create Plan</button>
+            <button type="button" class="btn btn-secondary" onclick="window.history.back();">Back</button>
+        </div>
+    </div>
+</div>
+
+<div id="id_confirmation_window" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Confirmation Required</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Please confirm the details below:
+                <ul>
+                    <li><span id="confirm_business"></span> Business Account</li>
+                    <li><span id="confirm_employee"></span> Employee Account/Accounts</li>
+                    <li><span id="confirm_messages"></span> SMS Messages limit per Month</li>
+                    <li><span id="confirm_storage"></span>GB Storage Capacity for the Business Account</li>
+                    <li>$<span id="confirm_price"></span> AUD/month</li>
+                </ul>
+                You'll be redirected to PayPal to complete your Payment.
+            </div>
+            <div class="modal-footer">
+                <div class="m-auto">
+                    <button type="button" class="btn btn-primary" onclick="createPlan()">Confirm</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block script %}
+<script>
+
+function priceLoadingSpinner(status){
+    if (status){
+        $("#price_loading_spinner").show()
+    }else{
+        $("#price_loading_spinner").hide()
+    }
+}
+
+function calculatePrice(){
+    priceLoadingSpinner(true)
+    payload = {
+        accounts : $("#business_account")[0].value,
+        employees : $("#employee_account")[0].value,
+        messages : $("#messages")[0].value,
+        storage : $("#storage")[0].value,
+    }
+    $.ajax({
+        type: 'GET',
+        datatype: 'json',
+        url: "{% url 'subscription_builder_api' %}",
+        data: payload,
+        success: function(data){
+            if(data.result == "success"){
+                $("#price")[0].innerText = data.discounted_price
+                if (data.original_price != "No Discount"){
+                    $("#discount_div")[0].style.display = "block"
+                    $("#discount_note")[0].style.display = "block"
+                    $("#original_div")[0].innerText = data.original_price
+                }else{
+                    $("#discount_div")[0].style.display = "none"
+                    $("#discount_note")[0].style.display = "none"
+                }
+                
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', data.message);
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(data){
+            priceLoadingSpinner(false)
+        },
+    })
+}
+
+function planConfirmationWindow(status){
+    if (status){
+        $("#confirm_business")[0].innerText = $("#business_account")[0].value
+        $("#confirm_employee")[0].innerText = $("#employee_account")[0].value
+        $("#confirm_messages")[0].innerText = $("#messages")[0].value
+        $("#confirm_storage")[0].innerText = $("#storage")[0].value
+        $("#confirm_price")[0].innerText = $("#price")[0].innerText
+        // $("#id_confirmation_window").animate({height:"toggle"},250)
+    }
+    else{
+        $("#confirm_business")[0].innerText = ""
+        $("#confirm_employee")[0].innerText = ""
+        $("#confirm_messages")[0].innerText = ""
+        $("#confirm_storage")[0].innerText = ""
+        $("#confirm_price")[0].innerText = ""
+        // $("#id_confirmation_window").animate({height:"toggle"},250)
+    }
+}
+
+function createPlan(){
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        accounts : $("#confirm_business")[0].innerText,
+        employees : $("#confirm_employee")[0].innerText,
+        messages : $("#confirm_messages")[0].innerText,
+        storage : $("#confirm_storage")[0].innerText,
+        price : $("#confirm_price")[0].innerText,
+    }
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'subscription_builder_api' %}",
+        data: payload,
+        success: function(data){
+            if(data.result == "success"){
+                window.open(data.link)
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', data.message);
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(data){
+            priceLoadingSpinner(false)
+        },
+    })
+}
+
+
+calculatePrice()
+
+    //Initiate ToolTip
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+</script>
+{% endblock %}

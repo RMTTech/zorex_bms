@@ -1,0 +1,251 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+        
+{% if user.is_parent %}
+
+
+<div class="container p-2 mt-2 mw-600px">
+    <div class="card Regular shadow">
+        <div class="card-header text-center bg-dark page-header">
+            <span class="h3">Subscription Status<a href="{% url 'subscription' %}?status=update" class="float-end btn btn-sm btn-primary">Update</a></span>
+        </div>
+        <div class="card-body">
+            <div class="">
+                <table class="text-break w-100">
+                    <tr>
+                        <td>Name</td>
+                        <td class="text-center">{{subscription.parent.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Email</td>
+                        <td class="text-center">{{subscription.parent.email}}</td>
+                    </tr>
+                    <tr>
+                        <td>Subscription Level</td>
+                        <td id="subscription_level" class="fw-bold" style="background-color: {{subscription.level}}; border-radius: 8px; text-align: center; text-size: bold;">{{subscription.level}}</td>
+                    </tr>
+                    <tr>
+                        <td>Subscription Status</td>
+                        <td id="subscription_status" class="text-center">{% if subscription.status %}<span class="d-block text-center m-auto bg-success" style="border-radius: 8px; color: white;">Active</span>{% else %}<span class="d-block text-center m-auto bg-danger" style="border-radius: 8px; color: white;">Disabled</span>{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>Subscription Expires on</td>
+                        <td class="text-center">{{subscription.expiry_date|date:"d M Y"}}</td>
+                    </tr>
+                    <tr>
+                        <td>Account Status</td>
+                        <td>You have used <a href="{% url 'manage_accounts' request.user.parent.id %}" class="text-decoration-none">{{subscription.used_accounts}}</a> out of {{subscription.plan.allowed_accounts}} Accounts<br>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Storage Status</td>
+                        <td>{{subscription.used_storage}} GB Used out of {{subscription.plan.allowed_storage}} GB</td>
+                    </tr>
+                    <tr>
+                        <td>SMS Status</td>
+                        <td><a href="{% url 'smslog' %}" class="text-decoration-none">{{user.parent.subscription.used_sms}}</a> sent This Cycle out of {{subscription.plan.allowed_sms}} SMS</td>
+                    </tr>
+                </table>
+                <div class="text-center my-1">
+                    <button class="btn btn-sm btn-primary m-auto" onclick="showPaymentHistory('{{user.parent.subscription.active_subscription}}')" data-bs-toggle="modal" data-bs-target="#payment_history_window">Payment History</button>
+                </div>
+            </div>
+            <div id="membership_status">
+                {% if user.subscription.cancelled %}
+                <div class="d-block m-auto text-center fw-bold" style="color: Red;">Your Subscription has been cancelled, your account will be disabled by the expiry date above unless you're on Trial Subscription</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-footer bg-dark page-header">
+            <div class="d-block text-center">
+                <a role="button" class="btn btn-success m-1 btn-sm" href="{% url 'subscribe' %}">Manage Subscription</a>
+                <a role="button" id="cancel_button" class="btn btn-danger m-1 btn-sm {% if not subscription.status or subscription.cancelled %}disabled{% endif %}" onclick="planCancelWindow(true);">Cancel Subscription</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="plan_cancel_window" class="modal backdrop" tabindex="-1">
+    <div class="modal-dialog mt-8">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Subscription Cancellation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="planCancelWindow(false)"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to Cancel your Subscription?</p>
+                <label for="reason">Please type your reason:</label>
+                <input class="form-control" type="text" name="reason" id="reason" required><br>
+                <p>Your Subscription will terminate by the Expiry Date, and no further charges will occur.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="cancelPlan()">Unsubscribe</button>
+                <button type="button" class="btn btn-secondary" onclick="planCancelWindow(false)">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="payment_history_window" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mw-800px">
+        <div class="modal-content border-0">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto">Payment History</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body table-responsive">
+                <table class="table table-sm table-bordered fs-7">
+                    <thead>
+                        <tr>
+                            <td>Subscription ID</td>
+                            <td>Plan Name</td>
+                            <td>Subscription Status</td>
+                            <td>Amount</td>
+                            <td>Payment date</td>
+                            <td>Invoice</td>
+                        </tr>
+                    </thead>
+                    <tbody id="payment_history_table">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-danger btn-sm w-50" data-bs-dismiss="modal" aria-label="Close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Payment History Handler
+    function showPaymentHistory(subID){
+        if (subID){
+            payload = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                sub_id: subID,
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'subscription_payment_history' %}",
+                data: payload,
+                success: function(data){
+                    if (data[data.length - 1]['result'] == 'success'){
+                        table = document.getElementById("payment_history_table")
+                        while (table.firstChild) {
+                            table.removeChild(table.firstChild);
+                        }
+                        for(i=0;i<data.length - 1;i++){
+                            createRow(data[i])
+                        }
+                    }else{
+                        showMessage('alert-error', data[data.length - 1]['message']);
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error', data.exception);
+                },
+            })
+        }else{
+            showMessage('alert-info','Please refresh the page and Try again!')
+        }
+    }
+    function createRow(data){
+        table = document.getElementById("payment_history_table")
+
+        row = document.createElement("tr")
+        cell1 = document.createElement("td")
+        cell1.innerText = data['sub_id']
+        row.appendChild(cell1)
+
+        cell2 = document.createElement("tr")
+        cell2 = document.createElement("td")
+        cell2.innerText = data['plan']
+        row.appendChild(cell2)
+
+        cell3 = document.createElement("tr")
+        cell3 = document.createElement("td")
+        cell3.innerText = data['sub_status']
+        row.appendChild(cell3)
+
+        cell4 = document.createElement("tr")
+        cell4 = document.createElement("td")
+        if (data['amount']){
+            cell4.innerText = "$" + data['amount'] + "AUD"
+        }
+        row.appendChild(cell4)
+
+        cell5 = document.createElement("tr")
+        cell5 = document.createElement("td")
+        if (data['payment_date']){
+            cell5.innerText = data['payment_date']
+        }
+        row.appendChild(cell5)
+
+        cell6 = document.createElement("tr")
+        cell6 = document.createElement("td")
+        if (data['payment_date']){
+            cell6.innerText = "Download"
+        }
+        row.appendChild(cell6)
+
+        table.appendChild(row)
+    }
+
+
+    function  planCancelWindow(status){
+       if(status){
+           $("#plan_cancel_window").show(300);
+        }else{
+            $("#plan_cancel_window").hide(300);
+        }
+    }
+    function cancelPlan(){
+        let reason = document.getElementById("reason").value;
+        if (reason){
+            payload = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                reason: reason
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'subscription_cancel' %}",
+                data: payload,
+                success: function(data){
+                    if (data.result == 'success'){
+                        showMessage('alert-success', "Plan Cancelled Successfully! Sorry to see you go :(");
+                        planCancelWindow(false);
+                        if( $("#subscription_level")[0].innerText == "Trial"){
+                            $("#subscription_status")[0].innerHTML = '<span class="d-block text-center m-auto bg-danger" style="border-radius: 8px; color: white;">Disabled</span>';
+                        }
+                        let container = document.getElementById("membership_status");
+                        let div = document.createElement("div");
+                        div.classList = "d-block m-auto text-center fw-bold";
+                        div.style.color = "red";
+                        div.innerText = "Your Subscription has been cancelled, your account will be disabled by the expiry date above unless you're on Trial Subscription";
+                        container.appendChild(div);
+                        $("#cancel_button")[0].classList.add('disabled');
+                    }else{
+                        showMessage('alert-error', data.exception);
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error', data.exception);
+                },
+            })
+        }else{
+            showMessage('alert-info','Please add a reason.')
+        }
+    }
+
+</script>
+{%endif%}
+
+{% endblock %}

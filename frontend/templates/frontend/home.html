@@ -1,0 +1,711 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+{% if user.is_authenticated %}
+<!-- Notification Menu -->
+<div id="notification_window" style="overflow: hidden;" class="fs-7">
+    {% for notification in user.notifications.all %}
+    <div id="notification_banner{{notification.id}}">
+        {% if notification.code == 1 %}
+        <div class="alert alert-dark d-flex align-items-center m-2 my-1 p-2" role="alert">
+            <div class="list-unstyled-ul mx-2">
+                <a href="{% url 'customer_dashboard' notification.customer.id %}" class="alert-link">{{notification.customer.name}}</a> {{notification.note}}
+            </div>
+            <button type="button" class="btn-close ms-auto" onclick="deleteNotification({{notification.id}})" aria-label="Close"></button>
+        </div>
+        {%elif notification.code == 2 %}
+        <div class="alert alert-danger d-flex align-items-center m-2 my-1 p-2" role="alert">
+            <div class="list-unstyled-ul mx-2">
+                <a href="{% url 'subscription' %}" class="alert-link">{{notification.note}}</a>
+            </div>
+            <button type="button" class="btn-close ms-auto" onclick="deleteNotification({{notification.id}})" aria-label="Close"></button>
+        </div>
+        {%elif notification.code == 3 %}
+        <div class="alert alert-info d-flex align-items-center m-2 my-1 p-2" role="alert">
+            <div class="list-unstyled-ul mx-2">
+                <a href="/account/{{notification.account.id}}/profile_page/" class="alert-link">{{notification.note}}</a>
+            </div>
+            <button type="button" class="btn-close ms-auto" onclick="deleteNotification({{notification.id}})" aria-label="Close"></button>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="container p-2 mt-1 mw-1400px">
+    <div class="d-flex justify-content-around flex-wrap">
+        {% if user.is_parent or user.is_staff %}
+        <!-- Invoice Card -->
+        <div class="mobilecard">
+            <div class="card shadow mb-2 mobilecard">
+                <div style="position: absolute; width: 100%; height: 100%;" id="invoices_loading_spinner" class="backdrop index-2" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-header bg-dark page-header">
+                    <h5 class="text-center">Invoices
+                        <select id="invoices_input_option" class="float-end form-select form-select-sm w-90px"
+                            onchange="FYoption(this)">
+                            <option value="2023">FY 23</option>
+                            <option selected value="2022">FY 22</option>
+                            <option value="2021">FY 21</option>
+                            <option value="2020">FY 20</option>
+                        </select>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="mx-4 my-2">
+                            <span title="Total Invoices for the Financial Year selected Above">Total
+                                Invoices</span><span class="float-end fw-bold" id="invoice_total">$ <span
+                                    id="invoice_total_value">0</span></span>
+                        </div>
+                        <div class="progress">
+                            <div id="percentage_paid" class="progress-bar bg-success" role="progressbar"></div>
+                            <div id="percentage_unpaid" class="progress-bar bg-warning" role="progressbar"></div>
+                        </div>
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td
+                                        style="width: 130px; text-align: center; border: none; color:var(--bs-success);">
+                                        <span class="fw-bold">$ <span id="total_received"></span></span><br>Paid
+                                    </td>
+                                    <td class="float-end text-center"
+                                        style="width: 110px; border: none; color:var(--bs-warning);"><span
+                                            class="fw-bold">$ <span id="outstanding"></span></span><br>Unpaid</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <hr class="m-1">
+                    <div>
+                        <div class="mx-4 my-2">
+                            <span title="Total Quotes for the Financial Year selected Above">Total Quotes</span><span
+                                class="float-end fw-bold" id="quote_total">$ <span
+                                    id="quote_total_value">0</span></span>
+                        </div>
+                        <div class="progress">
+                            <div id="percentage_accepted" class="progress-bar bg-success" role="progressbar"></div>
+                            <div id="percentage_undecided" class="progress-bar bg-secondary" role="progressbar"></div>
+                            <div id="percentage_rejected" class="progress-bar bg-warning" role="progressbar"></div>
+                        </div>
+                        <div class="d-block position-relative py-4 my-2 mx-auto" style="width:96%">
+                            <div class="position-absolute top-0 start-0 text-center"
+                                style=" border: none; color:var(--bs-success);">
+                                <span class="fw-bold">$ <span id="total_accepted"></span></span><br>Accepted
+                            </div>
+                            <div class="position-absolute top-0 start-50 translate-middle-x text-center"
+                                style=" border: none; color:var(--bs-secondary);">
+                                <span class="fw-bold">$ <span id="total_undecided"></span></span><br>Undecided
+                            </div>
+                            <div class="position-absolute top-0 end-0 text-center"
+                                style="border: none; color:var(--bs-warning);">
+                                <span class="fw-bold">$ <span id="total_rejected"></span></span><br>Rejected
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-dark page-header">
+                    <div class="text-center">
+                        <a role="button" href="{% url 'invoicing' %}" class="btn btn-primary">Invoicing</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Upcoming Appointments -->
+        <div class="mobilecard">
+            <div class="card shadow bg-light mb-2 mobilecard" style="min-height: 10rem;">
+                <div style="position: absolute; width: 100%; height: 100%; display: none;"
+                    id="upcoming_jobs_loading_spinner" class="backdrop" tabindex="-1" role="dialog"
+                    aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <h5 class="text-center card-header bg-dark page-header">Upcoming Appointments
+                    <select id="upcoming_appointment_input_option" class="float-end form-select form-select-sm w-90px" onchange="upcoming_appointments_feed(this)">
+                        <option value="0" selected>Today</option>
+                        <option value="1">Next 1 Days</option>
+                        <option value="2">Next 2 Days</option>
+                        <option value="3">Next 3 Days</option>
+                        <option value="4">Next 4 Days</option>
+                        <option value="5">Next 5 Days</option>
+                        <option value="7">Next 7 Days</option>
+                    </select>
+                    <br>
+                    <span class="fs-8">Total <span id="total_upcoming_appointments"></span></span>
+                </h5>
+                <div class="card-body" style="max-height: 28rem; overflow: auto;">
+                    <div id="upcoming_table_container">
+                    </div>
+                </div>
+                <div class="card-footer bg-dark page-header text-center">
+                    <a role="button" class="btn btn-primary" href="{% url 'upcoming_appointments' %}?date=today">Daily
+                        Run</a>
+                </div>
+            </div>
+        </div>
+        <!-- Customer Self Signup -->
+        <div class="mobilecard">
+            <div class="card shadow bg-light mB-2 mobilecard">
+                <div style="position: absolute; width: 100%; height: 100%; display: none;"
+                    id="selfsignup_loading_spinner" class="backdrop index-2 rounded" tabindex="-1" role="dialog"
+                    aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <h5 class="text-center card-header bg-dark page-header">Customer Self Signup</h5>
+                <form onsubmit="return selfSignup()">
+                    <div class="card-body" style="overflow: auto;">
+                        <span class="fs-7"></span>
+                        <div class="input-group">
+                            <label class="input-group-text" for="selfsignup_number">Customer Number</label>
+                            <input onk class="form-control" type="text" id="selfsignup_number" placeholder="04xx xxx xxx" data-bs-toggle="tooltip" data-bs-placement="top"
+                                title="This tool will send the Customer an SMS with a link to invite them to complete your registeration form to save you time filling their details, and you'll get notified once it's been filled.">
+                        </div>
+                    </div>
+                    <div class="card-footer bg-dark page-header text-center" style="max-height: 80px;">
+                        <button type="submit" class="btn btn-primary">Send Self Signup Link</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Welcome to Zorex -->
+<div class="container mw-800px p-2 m-auto mt-2">
+    <div class="card">
+        <div class="card-header text-center bg-dark p-3 page-header">
+            <span class="h3">Welcome to Zorex</span>
+        </div>
+        <div class="card-body">
+            <div class="text-center">
+                <h5 class="fst-italic fw-bold">Made for Aussie Businesses and Contractors</h5>
+                <h6>No.1 business management software, very easy to use and incredibly powerfull!!<br>Optimized for Mobile Devices
+                </h6>
+                <h6 class="text-start" style="color:goldenrod">If you are looking to:</h6>
+                <ul class="text-start fs-6 fst-italic">
+                    <li>Managing your own Business</li>
+                    <li>Managing a Business with Multiple Contractors/Employees</li>
+                    <li>Create and assign jobs "appointments" to your Contractors</li>
+                    <li>Organizing your Quotes and Invoices</li>
+                    <li>Organizing your Appointments</li>
+                    <li>Keeping Records of your Customers and Invoices</li>
+                    <li>Organizing your Job photos for peace of mind</li>
+                </ul>
+                <h6 class="text-start" style="color:goldenrod">You have come to the right Place</h6>
+                <h6>Australian Owned and Developed</h6>
+                <a href="{% url 'contact_us' %}"><h6>24/7 Local Support</h6></a>
+                <a role="button" class="btn text-info bg-dark d-block fs-5 my-4" href="{% url 'register' %}">Signup
+                    Today For a 30 Days Free Trial</a>
+                <div class="text-start ps-2">
+                    <h6>Availabe features:</h6>
+                    <ul class="fs-7 fst-italic ps-3">
+                        <li class="text-decoration-underline text-primary" data-bs-toggle="collapse"
+                            href="#customer_database" role="button" aria-expanded="false"
+                            aria-controls="customer_database">
+                            Customers Database and Management System <svg xmlns="http://www.w3.org/2000/svg" width="13"
+                                height="13" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
+                            </svg>
+                        </li>
+                        <div class="collapse" id="customer_database">
+                            <div class="card card-body bg-secondary text-light">
+                                <li class="list-unstyled">- Search By Name, Mobile, Number, email or Address.</li>
+                                <li class="list-unstyled">- Adding/Editing Customer Details.</li>
+                                <li class="list-unstyled">- "SMS" Messaging a "Self Register" Link to Customer.</li>
+                                <li class="list-unstyled">- One Click Navigate to customer address.</li>
+                                <li class="list-unstyled">- One Click Call Customer.</li>
+                                <li class="list-unstyled">- Adding Attachments to Customer Account.</li>
+                                <li class="list-unstyled">- Adding Notes to Customer Account.</li>
+                                <li class="list-unstyled">- One Click Create Invoice from Customer Dashboard.</li>
+                                <li class="list-unstyled">- One Click Booking Appointment for Customer from Customer
+                                    Dashboard.</li>
+                            </div>
+                        </div>
+                        <li class="text-decoration-underline text-primary" data-bs-toggle="collapse"
+                            href="#appointments_management" role="button" aria-expanded="false"
+                            aria-controls="appointments_management">
+                            Appointments Management System <svg xmlns="http://www.w3.org/2000/svg" width="13"
+                                height="13" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
+                            </svg>
+                        </li>
+                        <div class="collapse" id="appointments_management">
+                            <div class="card card-body bg-secondary text-light">
+                                <li class="list-unstyled">- Booking & Updating Appointments</li>
+                                <li class="list-unstyled">- Calendar View Style</li>
+                                <li class="list-unstyled">- Daily Run View Style</li>
+                                <li class="list-unstyled">- Allocating appointments to Employees/Users</li>
+                                <li class="list-unstyled">- On Approach SMS Notification</li>
+                                <li class="list-unstyled">- Mark Appointment as Started</li>
+                                <li class="list-unstyled">- Mark Appointment as Completed</li>
+                            </div>
+                        </div>
+                        <li class="text-decoration-underline text-primary" data-bs-toggle="collapse"
+                            href="#invoicing_management" role="button" aria-expanded="false"
+                            aria-controls="appointments_management">
+                            Quoting and Invoicing Management System <svg xmlns="http://www.w3.org/2000/svg" width="13"
+                                height="13" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
+                            </svg>
+                        </li>
+                        <div class="collapse" id="invoicing_management">
+                            <div class="card card-body bg-secondary text-light">
+                                <li class="list-unstyled">- Creating Quotes and Invoices on the Go</li>
+                                <li class="list-unstyled">- Setting up first Quote/Invoice Starting Number</li>
+                                <li class="list-unstyled">- Tracking Accepted and Rejected Quotes</li>
+                                <li class="list-unstyled">- Getting Notified by Message as soon as a Quote has been
+                                    Accepted or Rejected</li>
+                                <li class="list-unstyled">- Updating Invoice status to paid from the Invoicing Dashboard
+                                </li>
+                                <li class="list-unstyled">- Action dropdown menu to update Invoice from Invoicing
+                                    Dashboard</li>
+                                <li class="list-unstyled">- One Click to Download or Email Invoice to Customer as PDF
+                                </li>
+                                <li class="list-unstyled">- Tracking Invoice History Records, When it was created,
+                                    accepted, emailed, and paid</li>
+                                <li class="list-unstyled">- Adding Attachments to Invoices</li>
+                                <li class="list-unstyled">- Control weather Customers Can see the attachments on their
+                                    Invoice</li>
+                            </div>
+                        </div>
+                        <li class="text-decoration-underline text-primary" data-bs-toggle="collapse"
+                            href="#productslist_management" role="button" aria-expanded="false"
+                            aria-controls="appointments_management">
+                            Products List Management System <svg xmlns="http://www.w3.org/2000/svg" width="13"
+                                height="13" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
+                            </svg>
+                        </li>
+                        <div class="collapse" id="productslist_management">
+                            <div class="card card-body bg-secondary text-light">
+                                <li class="list-unstyled">- Creating and updating Products/Items</li>
+                                <li class="list-unstyled">- Easy add Items to Invoice "with the Auto search Function"
+                                </li>
+                                <li class="list-unstyled">- Control weather Employees Can see the products/items created
+                                    by Admin</li>
+                            </div>
+                        </div>
+                    </ul>
+                </div>
+                <h5 class="fst-italic">More and more features to come!!</h5>
+            </div>
+            <div class="d-block text-center my-3">
+                <a role="button" class="m-2 btn btn-success" href="{% url 'login_page' %}">Login</a>
+                <a role="button" class="m-2 btn btn-primary" href="{% url 'register' %}">Register a Business Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subscription Plan Slideshow -->
+<div class="container mw-800px m-auto p-2 mt-2" style="min-height: 35rem;">
+    <div class="card bg-secondary">
+        <div class="card-header bg-dark text-center">
+            <span class="text-info h3">Availabe Subscriptions</span>
+        </div>
+        <div id="subscription_carousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <div class="carousel-item active my-2">
+                    <div class="card mw-400px m-auto">
+                        <div class="card-header bg-dark page-header">
+                            <h5 class="card-title text-center fs-3 m-auto">Bronze Subscription
+                            </h5>
+                        </div>
+                        <div class="card-body" style="min-height: 30rem;">
+                            <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                                <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$9.95
+                                    AUD/month</span><br>
+                                $9.50 AUD/month<br>
+                                <span style="text-decoration: underline; color: cornflowerblue;">Limited time
+                                    only</span>
+                            </p>
+                            <p class="card-text">Our Basic Subscription Level designed for small business owners who
+                                operate alone as a sole director or a sole trader</p>
+                            <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                                <li>1 Business account</li>
+                                <li>Unlimited number of appointments</li>
+                                <li>Unlimited number of invoices</li>
+                                <li>100 Text/SMS Per Month</li>
+                                <li>Ability to customize SMS reminder</li>
+                                <li>Ability to customize OnApproach SMS</li>
+                                <li>1GB of Storage for your attachments</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-dark page-header">
+                            <a role="button" class="btn btn-dark text-info fs-6 d-block"
+                                href="{% url 'register' %}">Signup Today For a 30 Days Free Trial</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item my-2">
+                    <div class="card mw-400px m-auto">
+                        <div class="card-header bg-dark page-header">
+                            <h5 class="card-title text-center fs-3 m-auto">Silver Subscription
+                            </h5>
+                        </div>
+                        <div class="card-body" style="min-height: 30rem;">
+                            <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                                <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$24.45
+                                    AUD/month</span><br>
+                                $21.99 AUD/month<br>
+                                <span style="text-decoration: underline; color: cornflowerblue;">Limited time
+                                    only</span>
+                            </p>
+                            <p class="card-text">Our Standard Subscription Level designed for small business owners who
+                                operates with one employee</p>
+                            <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                                <li>1 Business account</li>
+                                <li>3 Employee accounts</li>
+                                <li>Unlimited number of appointments</li>
+                                <li>Unlimited number of invoices</li>
+                                <li>300 Text/SMS Per Month</li>
+                                <li>Ability to customize SMS reminder</li>
+                                <li>Ability to customize OnApproach SMS</li>
+                                <li>3GB of Storage for your attachments</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-dark page-header">
+                            <a role="button" class="btn btn-dark text-info fs-6 d-block"
+                                href="{% url 'register' %}">Signup Today For a 30 Days Free Trial</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item my-2">
+                    <div class="card mw-400px m-auto">
+                        <div class="card-header bg-dark page-header">
+                            <h5 class="card-title text-center fs-3 m-auto">Gold Subscription
+                            </h5>
+                        </div>
+                        <div class="card-body" style="min-height: 30rem;">
+                            <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                                <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$38.85
+                                    AUD/month</span><br>
+                                $34.99 AUD/month<br>
+                                <span style="text-decoration: underline; color: cornflowerblue;">Limited time
+                                    only</span>
+                            </p>
+                            <p class="card-text">Our mid Subscription Level designed for small to medium businesses who
+                                operates with a limited number of Staff</p>
+                            <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                                <li>1 Business account</li>
+                                <li>5 Employee accounts</li>
+                                <li>Unlimited number of appointments</li>
+                                <li>Unlimited number of invoices</li>
+                                <li>600 Text/SMS Per Month</li>
+                                <li>Ability to customize SMS reminder</li>
+                                <li>Ability to customize OnApproach SMS</li>
+                                <li>6GB of Storage for your attachments</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-dark page-header">
+                            <a role="button" class="btn btn-dark text-info fs-6 d-block"
+                                href="{% url 'register' %}">Signup Today For a 30 Days Free Trial</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item my-2">
+                    <div class="card mw-400px m-auto">
+                        <div class="card-header bg-dark page-header">
+                            <h5 class="card-title text-center fs-3 m-auto">Platinum Subscription
+                            </h5>
+                        </div>
+                        <div class="card-body" style="min-height: 30rem;">
+                            <p class="fs-4 text-center fw-bold" style="color: darkgreen;">
+                                <span style="text-decoration: line-through; color: #f71e1e93; font-size: medium;">$66.85
+                                    AUD/month</span><br>
+                                $59.99 AUD/month<br>
+                                <span style="text-decoration: underline; color: cornflowerblue;">Limited time
+                                    only</span>
+                            </p>
+                            <p class="card-text">Our Top Subscription Level designed for large businesses who operates
+                                with a large number of Staff</p>
+                            <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                                <li>1 Business account</li>
+                                <li>10 Employee accounts</li>
+                                <li>Unlimited number of appointments</li>
+                                <li>Unlimited number of invoices</li>
+                                <li>1200 Text/SMS Per Month</li>
+                                <li>Ability to customize SMS reminder</li>
+                                <li>Ability to customize OnApproach SMS</li>
+                                <li>12GB of Storage for your attachments</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-dark page-header">
+                            <a role="button" class="btn btn-dark text-info fs-6 d-block"
+                                href="{% url 'register' %}">Signup Today For a 30 Days Free Trial</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item my-2">
+                    <div class="card mw-400px m-auto">
+                        <div class="card-header bg-dark page-header">
+                            <h5 class="card-title text-center fs-3 m-auto">Custom Subscription
+                            </h5>
+                        </div>
+                        <div class="card-body" style="min-height: 30rem;">
+                            <p class="fs-4 text-center fw-bold" style="color: darkgreen;">Build Your Own Customized Subscription</p>
+                            <p class="card-text">Designed for Large businesses and Corporates</p>
+                            <ul class="fst-italic"><span class="fw-bold">Benefits:</span>
+                                <li>Custom number Business accounts</li>
+                                <li>Custom number of Employee accounts</li>
+                                <li>Unlimited number of appointments</li>
+                                <li>Unlimited number of invoices</li>
+                                <li>Custom number of text/SMS</li>
+                                <li>Ability to customize SMS reminder</li>
+                                <li>Ability to customize OnApproach SMS</li>
+                                <li>Custom Storage Capacity for your attachments</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-dark page-header">
+                            <a role="button" class="btn btn-dark text-info fs-6 d-block"
+                                href="{% url 'register' %}">Signup Today For a 30 Days Free Trial</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#subscription_carousel"
+                data-bs-slide="prev">
+                <span class="carousel-control-prev-icon bg-secondary rounded-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#subscription_carousel"
+                data-bs-slide="next">
+                <span class="carousel-control-next-icon bg-secondary rounded-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+{%endif%}
+{% endblock %}
+{% block script %}
+{% if user.is_authenticated %}
+<script>
+
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+    //invoice card handler
+    function invoicesLoadingSpinner(status) {
+        if (status) {
+            $("#invoices_loading_spinner").show()
+        }
+        else {
+            $("#invoices_loading_spinner").hide()
+        }
+    }
+    function FYoption(optionSelected) {
+        invoicesLoadingSpinner(true)
+        if (optionSelected.value) {
+            invoiceData = {
+                fy_id: optionSelected.value,
+            }
+        } else {
+            invoiceData = {
+                fy_id: optionSelected,
+            }
+        }
+        $.ajax({
+            type: 'GET',
+            datatype: 'json',
+            url: "{% url 'invoicing_overall_feed' %}",
+            data: invoiceData,
+            success: function (data) {
+                if (data.result == "success") {
+                    $("#invoice_total_value")[0].innerText = data.total || 0;
+                    $("#percentage_paid")[0].style.width = data.percentage_paid + "%" || 0;
+                    $("#percentage_unpaid")[0].style.width = data.percentage_unpaid + "%" || 0;
+                    $("#total_received")[0].innerText = data.total_received || 0;
+                    $("#outstanding")[0].innerText = data.outstanding || 0;
+
+                    $("#quote_total_value")[0].innerText = data.total_quote || 0;
+                    $("#percentage_accepted")[0].style.width = data.percentage_accepted + "%" || 0;
+                    $("#percentage_rejected")[0].style.width = data.percentage_rejected + "%" || 0;
+                    $("#percentage_undecided")[0].style.width = data.percentage_undecided + "%" || 0;
+                    $("#total_accepted")[0].innerText = data.total_accepted || 0;
+                    $("#total_rejected")[0].innerText = data.total_rejected || 0;
+                    $("#total_undecided")[0].innerText = data.total_undecided || 0;
+                }
+                else if (data.result == "error") {
+                }
+            },
+            error: function (data) {
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function (data) {
+                invoicesLoadingSpinner(false)
+            },
+        })
+
+    }
+
+    //upcoming appointments handler
+    function upcomingJobsLoadingSpinner(status) {
+        if (status) {
+            $("#upcoming_jobs_loading_spinner").show()
+        }
+        else {
+            $("#upcoming_jobs_loading_spinner").hide()
+        }
+    }
+    function upcoming_appointments_loader(data) {
+        let tableContainer = document.getElementById("upcoming_table_container");
+        while (tableContainer.lastChild) {
+            tableContainer.removeChild(tableContainer.lastChild);
+        }
+        $("#total_upcoming_appointments")[0].innerText = data.length - 1;
+        for (i = 0; i < data.length; i++) {
+            if (data[i].attendee) {
+                let table = document.createElement("table");
+
+                let tr1 = document.createElement("tr");
+                let td1 = document.createElement("td");
+                let td11 = document.createElement("td");
+                td1.innerText = "Attendee";
+                td11.innerText = data[i].attendee;
+                tr1.appendChild(td1);
+                tr1.appendChild(td11);
+                table.appendChild(tr1);
+
+                let tr2 = document.createElement("tr");
+                let td2 = document.createElement("td");
+                let td22 = document.createElement("td");
+                td2.innerText = "Customer";
+                td22.innerHTML = "<a class='btn btn-sm btn-primary rounded-3' href='/customer/customer_dashboard/" + data[i].customer_id +"/'>" + data[i].customer +"</a>";
+                tr2.appendChild(td2);
+                tr2.appendChild(td22);
+                table.appendChild(tr2);
+
+                let tr3 = document.createElement("tr");
+                let td3 = document.createElement("td");
+                let td33 = document.createElement("td");
+                td3.innerText = "Address";
+                td33.innerHTML = "<a target='_blank' href='https://maps.google.com/?q=" + data[i].address + " role='button' class='btn btn-sm btn-info fs-8'>" + data[i].address + "</a>";
+                tr3.appendChild(td3);
+                tr3.appendChild(td33);
+                table.appendChild(tr3);
+
+                let tr4 = document.createElement("tr");
+                let td4 = document.createElement("td");
+                let td44 = document.createElement("td");
+                td4.innerText = "Description";
+                td44.innerText = data[i].description;
+                tr4.appendChild(td4);
+                tr4.appendChild(td44);
+                table.appendChild(tr4);
+
+                let tr5 = document.createElement("tr");
+                let td5 = document.createElement("td");
+                let td55 = document.createElement("td");
+                td5.innerText = "Start Time";
+                td55.innerText = data[i].start;
+                tr5.appendChild(td5);
+                tr5.appendChild(td55);
+                table.appendChild(tr5);
+
+                let tr6 = document.createElement("tr");
+                let td6 = document.createElement("td");
+                let td66 = document.createElement("td");
+                td6.innerText = "End Time";
+                td66.innerText = data[i].end;
+                tr6.appendChild(td6);
+                tr6.appendChild(td66);
+                table.appendChild(tr6);
+
+                let hr = document.createElement("hr");
+                tableContainer.appendChild(table)
+                tableContainer.appendChild(hr)
+            }
+        }
+    }
+    function upcoming_appointments_feed(optionSelected) {
+        upcomingJobsLoadingSpinner(true)
+        payload = {
+            option: optionSelected.value,
+        }
+        $.ajax({
+            type: 'GET',
+            datatype: 'json',
+            url: "{% url 'upcoming_appointments_feed' %}",
+            data: payload,
+            success: function (data) {
+                upcoming_appointments_loader(data);
+            },
+            error: function (data) {
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function (data) {
+                upcomingJobsLoadingSpinner(false)
+            },
+        })
+    }
+    upcoming_appointments_feed($("#upcoming_appointment_input_option")[0]);
+    FYoption($("#invoices_input_option")[0].value);
+
+    //Cus Self Signup
+    function SelfSignupLoadingSpinner(status) {
+        if (status) {
+            $("#selfsignup_loading_spinner").show()
+        } else {
+            $("#selfsignup_loading_spinner").hide()
+        }
+    }
+    function selfSignup() {
+        if ($("#selfsignup_number")[0].value.length > 9) {
+            SelfSignupLoadingSpinner(true);
+            payload = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                number: $("#selfsignup_number")[0].value,
+            }
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'customer_selfsignup_code' %}",
+                data: payload,
+                success: function (data) {
+                    if (data.result == "success"){
+                        showMessage('alert-success', data.message)
+                    }else if (data.result == "error"){
+                        showMessage('alert-error', data.message)
+                    }
+                },
+                error: function (data) {
+                    showMessage('alert-error', "Please check your internet connection and try again!");
+                },
+                complete: function (data) {
+                    SelfSignupLoadingSpinner(false)
+                },
+            })
+        }
+        return false;
+    }
+
+</script>
+{% endif %}
+{% endblock %}

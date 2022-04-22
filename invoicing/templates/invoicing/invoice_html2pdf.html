@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{invoice.title}} {{invoice.invoice_no}}</title>
+</head>
+<body style="font-size: 12px;">
+    <div>
+        <table>
+            <tr>
+                <td style="width: 300px;">
+                <table>
+                    <tr>
+                        <td style="font-weight: 600; font-size: 18px;">{{invoice.parent.business.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>ABN/ACN {{invoice.parent.business.abn}}</td>
+                    </tr>
+                    {%if invoice.parent.business.license_number != ""%}
+                    <tr>
+                        <td style="padding-bottom: 4px;">License No {{invoice.parent.business.license_number}}</td>
+                    </tr>
+                    {%endif%}
+                    <tr>
+                        <td>{{invoice.parent.address.line1}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{invoice.parent.address.line2}}</td>
+                    </tr>
+                    <tr>
+                        <td>M: {{invoice.parent.number}}</td>
+                    </tr>
+                    <tr>
+                        <td>E: {{invoice.parent.email}}</td>
+                    </tr>
+                </table>
+                </td>
+                <td><img src="{{protocol}}://{{domain}}{{invoice.parent.business.logo.url}}" alt="" id="logo" width="150px"></td>
+            </tr>
+        </table>
+    </div>
+    <div>
+        <br>
+        <div style="font-size: 24px; color: #000080;">{% if invoice.title == "Invoice" %}TAX Invoice{% else %}Quote{% endif %}</div>
+    </div>
+    <div>
+        <table>
+            <tr>
+                <td style="width: 250px;">{% if invoice.title == "Invoice" %}Invoice to{% else %}Quote to{% endif %} {{invoice.customer}}</td>
+                <td style="width: 300px;"></td>
+                <td>{{invoice.title}} No</td>
+                <td>{{invoice.invoice_no}}</td>
+            </tr>
+            <tr>
+                <td>{{invoice.customer.address}}</td>
+                <td></td>
+                <td>{{invoice.title}} Date</td>
+                <td>{{invoice.invoice_date|date:"d M Y"}}</td>
+            </tr>
+            <tr>
+                <td>{% if invoice.customer.business_name %}{{invoice.customer.business_name}}{%endif%}</td>
+                <td></td>
+                <td>Due Date</td>
+                <td>{{invoice.due_date|date:"d M Y"}}</td>
+            </tr>
+            <tr>
+                <td>{% if invoice.customer.business_abn %}{{invoice.customer.business_abn}}{% endif %}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+    <hr>
+    <div style="display: block; position: relative; margin: 10px;">
+        <table style="border: 1px solid #6d6d6d; margin-bottom: 0px;">
+            <thead>
+                <tr style="background-color: #afafff;">
+                    <th style="padding-top: 4px; width: 200px;">Product/Service</th>
+                    <th style="padding-top: 4px; width: auto">Description</th>
+                    <th style="padding-top: 4px; width: 50px;">QTY</th>
+                    <th style="padding-top: 4px; width: 80px;">Price</th>
+                    <th style="padding-top: 4px; width: 90px;">Sub-Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in invoice.products.all %}
+                <tr>
+                    <td style="padding-top: 4px; text-align: center;">{{product.product_title}}</td>
+                    <td style="padding-top: 4px; text-align: left;">{{product.product_description}}</td>
+                    <td style="padding-top: 4px; text-align: center;">{{product.quantity}}</td>
+                    <td style="padding-top: 4px; text-align: right;">$ {{product.price}}</td>
+                    <td style="padding-top: 4px; text-align: right;">$ {{product.total}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <center>..................................................................................................................................................................................................................</center>
+        <table style="margin-top: 0px;">
+            <tfoot>
+                <tr>
+                    {% if invoice.parent.business.gst_registered %}
+                    <td colspan="3" rowspan="5">{% if invoice.note %}
+                        <Strong style="text-align: left;">Notes:</Strong><br>
+                        <div style="margin-left: 30px;">{{invoice.note}}</div>
+                        {% endif %}
+                    </td>
+                    {% else %}
+                    <td colspan="2" rowspan="4">{% if invoice.note %}
+                        <Strong style="text-align: left;">Notes:</Strong><br>
+                        <div style="margin-left: 30px;">{{invoice.note}}</div>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td></td>
+                    <td></td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: center; width: 120px;">Sub Total</td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: right; width: 90px;">$ {{invoice.sub_total}}</td>
+                </tr>
+                {% if invoice.parent.business.gst_registered %}
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: center; width: 120px;">GST</td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: right; width: 90px;">$ {{invoice.total_gst}}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: center; width: 120px;">Total</td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: right; width: 90px;">$ {{invoice.total_value}}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: center; width: 120px; color: green;">Paid</td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: right; width: 90px; color: green;">$ {{invoice.amount_received}}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: center; width: 120px; color: red;">Outstanding</td>
+                    {% if invoice.balance_due != "0" %}
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: right; width: 90px; color: red;">$ {{invoice.balance_due}}</td>
+                    {% else %}
+                    <td style="padding-top: 4px; border: 1px solid #6d6d6d; text-align: right; width: 90px;">$ {{invoice.balance_due}}</td>
+                    {% endif %}
+                </tr>
+            </tfoot>
+        </table>
+        
+    </div>
+    <div >
+        <div style="margin: 20px 0px 20px 10px">
+            {% if invoice.public_link and invoice.show_attachments%}
+            <a href="{{protocol}}://{{domain}}/invoicing/viewinvoice/{{invoice.public_link}}">See Attachments</a>
+            {% endif %}
+        </div>
+    </div>
+    <div style="display: block; position: relative; margin: 10px;">
+        <strong>Payment Method</strong><br>
+        {% if invoice.payment_method == "BANK_TRANSFER" %}Direct Bank Deposit or EFT<br>Bank: {{invoice.parent.business.bank_name}}<br>Send to: {{invoice.parent.business.account_name}}<br>BSB: {{invoice.parent.business.bsb}}<br>ACC: {{invoice.parent.business.account_number}}
+        {% elif invoice.payment_method == "CASH" %} Cash Payment
+        {% elif invoice.payment_method == "CASH_ON_DELIVERY" %} Cash On Delivery
+        {% elif invoice.payment_method == "EFTPOS" %} EFTPOS <br> Please contact us to process your payment
+        {% endif %}
+        <br>
+        {% if invoice.payment_method == "BANK_TRANSFER" and invoice.title == "Invoice" %}
+        <div>Please use Invoice Number as a reference on the Electronic Funds Transfer</div>
+        {% endif %}
+    </div>
+    {%if invoice.parent.conf.invoice_note != ""%}
+    <div style="margin-top: 80px;">
+        Note:<br>
+        {{invoice.parent.conf.invoice_note}}
+    </div>
+    {%endif%}
+    {%if invoice.parent.conf.invoice_footer != "" %}
+    <center>..................................................................................................................................................................................................................</center>
+    <br>
+    <div style="padding-left: 10px; padding-right: 10px;">
+        {{invoice.parent.conf.invoice_footer}}
+    </div>
+    {%endif%}
+</body>
+</html>

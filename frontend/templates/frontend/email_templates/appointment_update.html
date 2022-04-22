@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="color-scheme" content="light dark">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Zorex BMS</title>
+        <style type="text/css">
+            :root {
+                Color-scheme: light dark;
+            }
+            @media (prefers-color-scheme: dark) {
+                img {
+                    filter: brightness(.8) contrast(1.2);
+                }
+            }
+        </style>
+    </head>
+    <body style="font-family: Tahoma, system-ui, 'Segoe UI', Geneva, Verdana, sans-serif; color: black;">
+        <div style="padding: 0px; position: relative; min-width: 0; max-width: 800px; word-wrap: break-word; background-color: #ffffff2d; background-clip: border-box; border: 1px solid; border-radius: 0.5rem; margin: auto;">
+            <div style="padding: 0.5rem 1rem; margin-bottom: 0; background-color: #d6d6d681; border-bottom: 1px solid #000000; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem;">
+                <div style="text-align: center; margin-top: 0.25rem; margin-bottom: 0.25rem; font-weight: bold; font-size: 28px;">
+                    {{event.event_customer.parent.business.name}}
+                </div>
+            </div>
+            <div style="flex: 1 1 auto; padding: 0.7rem 0.7rem; padding: 1rem;">
+                <div style="font-size: 18px; margin-bottom: 3rem;">Dear {{event.event_customer.name}},</div>
+                <img style="width: 120px; height: 120px; border-radius: 5px; display: block; margin: auto;" src="{{protocol}}://{{domain}}{{event.event_customer.parent.business.logo.url}}">
+                <br><br><br>
+                <div style="font-size: 18px; margin-left: 1rem;">
+                    Your Booked in appointment with {{event.event_customer.parent.business.name}} has been Updated, New Appointment Details:<br><br>
+                    On: {{event.start|date:"d M Y"}}<br>
+                    ETA: {{event.start|date:"g:i A"}}<br><br>
+                    Estimated finish time: {{event.end|date:"g:i A"}}<br><br>
+                    Appointment Description:<br>
+                    {{event.description}}
+                </div>
+                <br><br>
+                <div style="font-size: 17px;">
+                    Please call us or reply to this email if you'd like to change or cancel this appointment.
+                </div>
+                
+                <div style="line-height: 100%; font-size: 16px; margin-left: 0.5rem; margin-top: 4rem; margin-bottom: 1.5rem;">
+                    Kind Regards<br><br>
+                    {{sender.name}}<br>
+                    {% if sender.job_title %}{{sender.job_title}}<br>{% endif %}
+                    M: {{sender.number}}<br>
+                    E: {{sender.email}}<br><br>
+                </div>
+                <hr>
+
+                <div style="line-height: 110%; margin-left: 1rem; font-size: 16px; margin-top: 1.5rem; margin-bottom: 1.5rem; text-align: center; font-weight: bold;">
+                    {{event.event_customer.parent.business.name}}<br>
+                    {{event.event_customer.parent.address}}<br>
+                    M: {{event.event_customer.parent.number}}<br>
+                    E: {{event.event_customer.parent.email}}<br>
+                    ABN/ACN {{event.event_customer.parent.business.abn}}<br>
+                    {%if event.event_customer.parent.business.license_number != ""%}
+                    License No {{event.event_customer.parent.business.license_number}}<br>
+                    {%endif%}
+                </div>
+                <hr>
+                <div style="font-size: 10px; margin-bottom: 3rem; padding-right: 1.5rem; padding-left: 1.5rem;">
+                    Please disregard this Email if you aren't the intended person named at the top.
+                </div>
+
+                <div style="text-align: center; font-size: 14px;">Powered By: Zorex BMS<br>All
+                    rights reserved.<br>
+                    <a href="{{protocol}}://{{domain}}/privacy_policy">Privacy Policy</a> | <a href="{{protocol}}://{{domain}}/terms_conditions">Terms & Conditions</a>
+                </div>
+                <br>
+            </div>
+        </div>
+    </body>
+</html>
+

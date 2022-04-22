@@ -1,0 +1,669 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}<link rel="stylesheet" href="{% static 'scheduler/styles/main.css' %}">
+<script type="text/javascript" src="{% static 'scheduler/styles/moment.js' %}"></script>{% endblock %}
+
+{% block main %}
+
+
+<div class="mw-1200px m-auto">
+    <div class="bg-light">
+        <div class="bg-light m-auto fc fc-media-screen fc-direction-ltr fc-theme-standard" id="calendar">
+        </div>
+    </div>
+</div>
+           
+<div class="modal backdrop index-2" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header p-2">
+                <h5 class="modal-title m-auto">Appointment</h5>
+                <button type="button" class="btn-close m-0" aria-label="Close" id="modalClose1" onclick="closeAppointmentWindow()"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group  mb-3">
+                        <label for="searchbar" class="col-form-label">Customers Name:</label>
+                        <div class="input-group">
+                            <input id="searchbar" class="form-control" onfocus="search_field_focused()" onkeyup="search_customers()" onblur="search_field_blured()" type="text" placeholder="Search Clients..." required value="">
+                            <div class="input-group-append">
+                                <a role="button" onclick="showaddcustomerwindow()" class="btn btn-outline-success">Add New</a>
+                            </div>
+                        </div>
+                        <input id="id_event_customer" class="d-none" type="text" name="event_customer">
+                        <div id="search_list_div" class="d-inline-block position-absolute mh-200px overflow-auto rounded index-3">
+                            <ul class="list-group d-none" id="search_list">
+                                {% for customer in customers %}
+                                <li class="customers list-group-item btn-primary index-2" role="button" onclick="option_selected('{{customer.id}}','{{customer}}')">{{customer}}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div id="id_customer_buttons" class="form-group">
+                        <div class="input-group">
+                            <div class="input-group-append">
+                                <a role="button" onclick="customerDashboard()" class="btn btn-outline-primary m-1 btn-sm">Customer Dashboard</a>
+                            </div>
+                            <div class="input-group-append">
+                                <a role="button" onclick="customerAppointments()" class="btn btn-outline-success m-1 btn-sm">Customer Appointments</a>
+                            </div>
+                        </div>
+                    </div>
+                    <input id="id_event_id" class="d-none" type="text" name="event_id">
+                    <div class="form-group">
+                        <label for="id_event_account" class="col-form-label">Attendee Name:</label>
+                        <select name="event_account" id="id_event_account" class="form-control">
+                            <option value="" >---------</option>
+                            {% for account in accounts %}
+                            <option value="{{account.id}}">{{account.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_description" class="col-form-label">Description:</label>
+                        <textarea name="description" cols="30" rows="2" class="form-control" placeholder="Enter event description" required="" id="id_description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_start" class="col-form-label">Start Date:</label>
+                        <input type="datetime-local" name="start" class="form-control" required="" id="id_start">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_end" class="col-form-label">End Date:</label>
+                        <input type="datetime-local" name="end" class="form-control" required="" id="id_end">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <a role="button" id="id_event_submit" class="btn btn-primary">Add</a>
+                    <a role="button" id="id_update_button" class="btn btn-success d-none">Update</a>
+                    <a role="button" id="id_delete_button" class="btn btn-warning d-none">Delete</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="id_confirmation_window" class="d-none modal backdrop" style="z-index: 10000 !important;" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h5 class="modal-title m-auto" id="exampleModalLabel">Confirmation Required</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close" id="id_confirmation_window_cancel"></button>
+            </div>
+            <div class="modal-body">
+                Would you like to save the changes?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="id_confirmation_window_confirm">Save changes</button>
+                <button type="button" class="btn btn-danger" data-dismiss="modal" id="id_confirmation_window_cancel1">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="add_customer_window" class="modal backdrop index-2">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header p-2 bg-primary text-light">
+                <h5 class="modal-title mx-auto" id="id_modal_title">Customer Creation Form</h5>
+                <button class="btn btn-danger p-x" id="id_confirmation_window_cancel" onclick="hideaddcustomerwindow()">
+                    <span class="fs-4">&times;</span>
+                </button>
+            </div>
+            <form class="card-body p-4" onsubmit="return addNewCustomer()">
+                <div class="col-md-12">
+                    <label for="id_first_name">First name<span style="color: red;">*</span></label>
+                    <input type="text" name="first_name" maxlength="30" class="form-control" id="id_first_name" placeholder="First Name" required>
+                </div>
+                <div class="col-md-12">
+                    <label for="id_last_name">Last name<span style="color: red;">*</span></label>
+                    <input type="text" name="last_name" maxlength="30" class="form-control" id="id_last_name" placeholder="Last Name" required>
+                </div>
+                <div class="col-12">
+                    <label for="id_email">Email<span style="color: red;">*</span></label>
+                    <input type="email" name="email" class="form-control" id="id_email" placeholder="Email" required>
+                </div>
+                <div class="col-12">
+                    <label for="id_number">Mobile number<span style="color: red;">*</span></label>
+                    <input type="text" name="number" class="form-control" required id="id_number" maxlength="16" pattern="[0-9 -]{10,}" placeholder="Mobile Number">
+                </div>
+                <div class="col-12">
+                    <label for="id_address">Address<span style="color: red;">*</span></label>
+                    <input type="text" name="address" class="form-control" id="id_address" placeholder="Address" required>
+                </div>
+                <div class="col-12">
+                    <label for="id_address">Business Name</label>
+                    <input type="text" name="business_name" class="form-control" id="id_business_name" placeholder="Business Name">
+                </div>
+                <div class="col-12">
+                    <label for="id_address">ABN/ACN</label>
+                    <input type="text" name="business_abn" class="form-control" id="id_business_abn" placeholder="ABN or ACN">
+                </div>
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="id_privacy_policy" name="privacy_policy" checked required>
+                    <label class="form-check-label" for="id_privacy_policy">
+                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_terms_conditions" name="terms_conditions" checked required>
+                    <label class="form-check-label" for="id_terms_conditions">
+                        <a href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_promotions" name="promotions" checked>
+                    <label class="form-check-label" for="id_promotions">
+                        Promotions
+                    </label>
+                </div><hr>
+                <div class="col-12 text-center">
+                    <button role="button" type="submit" class="btn btn-sm btn-primary">Create Account</button> 
+                    <a role="button" type="button" class="btn btn-sm btn-danger" onclick="hideaddcustomerwindow()">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="id_loading_spinner" class="backdrop modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="{% static 'scheduler/styles/main.js' %}"></script>
+<script type="text/javascript">
+    const closeBtn1 = document.getElementById('modalClose1');
+    const updateButton = document.getElementById('id_update_button');
+    const modal = document.getElementById('eventModal');
+    const submitButton = document.getElementById('id_event_submit');
+    const deleteButton = document.getElementById('id_delete_button');
+    const confWindow = document.getElementById('id_confirmation_window');
+    const confWindowConfirm = document.getElementById('id_confirmation_window_confirm');
+    const confWindowCancel = document.getElementById('id_confirmation_window_cancel');
+    const confWindowCancel1 = document.getElementById('id_confirmation_window_cancel1');
+    const customerButtons = document.getElementById('id_customer_buttons');
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var today = new Date();
+        var iv = localStorage.getItem("fcDefaultView") || 'timeGridWeek';
+        var id = localStorage.getItem("fcDefaultDate") || new Date();
+        var dt = new Date(id);
+        if(iv.includes("dayGridMonth") == true){
+            if(dt.getDate() != 1){
+                dt.setDate(15);
+                dt.setMonth(dt.getMonth()+1);
+            }
+        };
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+
+            events: {
+                refetchResourcesOnNavigate: true,
+                url: "{% url 'event_feed' %}",
+                method: "POST",
+                extraParams:{
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                failure: function() {
+                    alert('there was an error while fetching Appointments!');
+                },
+            },
+            
+            
+            select: function(event) {
+                document.getElementById('id_event_id').value = ""
+                document.getElementById('id_event_account').value = ""
+                document.getElementById('id_event_customer').value = ""
+                document.getElementById('searchbar').value = ""
+                document.getElementById('id_description').value = ""
+                document.getElementById('id_start').value = moment(event.start).format().slice(0,16)
+                document.getElementById('id_end').value = moment(event.end).format().slice(0,16)
+                submitButton.classList.remove('d-none')
+                submitButton.classList.add('d-inline-block')
+                updateButton.classList.add('d-none')
+                deleteButton.classList.add('d-none')
+                deleteButton.classList.remove('d-inline-block')
+                customerButtons.classList.add('d-none')
+                $("#eventModal").animate({height:"toggle"}, 200)
+                calendar.unselect()
+                submitButton.addEventListener('click', function event_add(){
+                    displayLoadingSpinner(true);
+                    payload = {
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                        event_account: document.getElementById('id_event_account').value,
+                        event_customer: document.getElementById('id_event_customer').value,
+                        description: document.getElementById('id_description').value,
+                        start: document.getElementById('id_start').value,
+                        end: document.getElementById('id_end').value,
+                    };
+                    $.ajax({
+                        type: 'POST',
+                        datatype: 'json',
+                        url: "{% url 'event_add' %}",
+                        data: payload,
+                        success: function(data){
+                            if(data.result == "success"){
+                                $("#eventModal").hide({height:"toggle"}, 200)
+                                showMessage('alert-success', data.message);
+                                document.getElementById('id_event_id').value = ""
+                                document.getElementById('id_event_account').value = ""
+                                document.getElementById('id_event_customer').value = ""
+                                document.getElementById('searchbar').value = ""
+                                document.getElementById('id_description').value = ""
+                                document.getElementById('id_start').value = ""
+                                document.getElementById('id_end').value = ""
+
+                            }
+                            else if (data.result == "error"){
+                                showMessage('alert-error', data.message);
+                            }
+                        },
+                        error: function(data){
+                            // console.log(data.exception)
+                            showMessage('alert-error', "Please check your internet connection and try again!");
+                        },
+                        complete: function(){
+                            calendar.refetchEvents();
+                            displayLoadingSpinner(false);
+                        }
+                    })
+                })
+            },
+
+            eventClick: function(event) {
+                document.getElementById('id_event_id').value = event.event.id
+                document.getElementById('id_event_customer').value = event.event.extendedProps.event_customer
+                document.getElementById('searchbar').value = event.event.extendedProps.event_customer_name
+                document.getElementById('id_event_account').value = event.event.extendedProps.event_account
+                document.getElementById('id_description').value = event.event.extendedProps.description
+                document.getElementById('id_start').value = moment(event.event.start).format().slice(0,16)
+                document.getElementById('id_end').value = moment(event.event.end).format().slice(0,16)
+                $("#eventModal").animate({height:"toggle"}, 200)
+                customerButtons.classList.remove('d-none')
+                updateButton.classList.remove('d-none')
+                updateButton.classList.add('d-inline-block')
+                submitButton.classList.add('d-none')
+                deleteButton.classList.remove('d-none')
+                calendar.unselect()
+                updateButton.addEventListener('click', ()=>{
+                    event_data = {
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                        id: document.getElementById('id_event_id').value,
+                        description: document.getElementById('id_description').value,
+                        start: moment(document.getElementById('id_start').value).format(),
+                        end: moment(document.getElementById('id_end').value).format(),
+                        event_customer: document.getElementById('id_event_customer').value,
+                        event_account: document.getElementById('id_event_account').value,
+                    },
+                    $.ajax({
+                        type: 'POST',
+                        datatype: 'json',
+                        url: "{% url 'event_update' %}",
+                        data: event_data,
+                        success: function(data){
+                            if (data.result == "success"){
+                                $("#eventModal").hide(200)
+                                calendar.refetchEvents();
+                                showMessage('alert-success', "Updated Successfully!")
+                            }
+                            else if (data.result == "error"){
+                                $("#eventModal").hide(200)
+                                calendar.refetchEvents();
+                                showMessage('alert-error','Something went wrong, please try again!')
+                            }
+                        },
+                        error: function(data){
+                            calendar.refetchEvents();
+                            showMessage('alert-error','Please check your internet and try again!')
+                            
+                        },
+                        complete: function(data){
+                        },
+                    })
+                })
+                deleteButton.addEventListener('click', ()=>{
+                    event_data = {
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                        id: document.getElementById('id_event_id').value,
+                    },
+                    $.ajax({
+                        type: 'POST',
+                        datatype: 'json',
+                        url: "{% url 'event_delete' %}",
+                        data: event_data,
+                        success: function(data){
+                            if (data.result == "success"){
+                                $("#eventModal").hide(200)
+                                showMessage('alert-success', "Deleted Successfully!")
+                            }
+                            else if (data.result == "error"){
+                                $("#eventModal").hide(200)
+                                showMessage('alert-error','Something went wrong, please try again!')
+                            }
+                        },
+                        error: function(data){
+                            showMessage('alert-error','Please check your internet and try again!')
+                        },
+                        complete: function(data){
+                            calendar.refetchEvents();
+                        },
+                    })
+                })
+            },
+
+            eventResize: function(event, delta, revertFunc) {
+                confWindow.classList.remove('d-none');
+                confWindow.classList.add('d-block');
+                confWindowCancel.addEventListener('click',()=>{
+                    calendar.refetchEvents();
+                    confWindow.classList.add('d-none');
+                });
+                confWindowCancel1.addEventListener('click',()=>{
+                    calendar.refetchEvents();
+                    confWindow.classList.add('d-none');
+                });
+                confWindowConfirm.onclick = function(){
+                    event_data = {
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                        id: event.event.id,
+                        description: event.event.extendedProps.description,
+                        start: moment(event.event.start).format(),
+                        end: moment(event.event.end).format(),
+                    },
+                    $.ajax({
+                        type: 'POST',
+                        datatype: 'json',
+                        url: "{% url 'event_update' %}",
+                        data: event_data,
+                        success: function(data){
+                            if (data.result == "success"){
+                                showMessage('alert-success', "Resized Successfully!")
+                                calendar.refetchEvents();
+                                confWindow.classList.add('d-none');
+                            }
+                            else if (data.result == "error"){
+                                calendar.refetchEvents();
+                                showMessage('alert-error','Something went wrong, please try again!')
+                            }
+                        },
+                        error: function(data){
+                            calendar.refetchEvents();
+                            showMessage('alert-error','Please check your internet and try again!')
+                        },
+                    })
+                }
+            },
+            
+            eventDrop: function(event, delta, revertFunc) {
+                confWindow.classList.remove('d-none');
+                confWindow.classList.add('d-block');
+                confWindowCancel.addEventListener('click',()=>{
+                    calendar.refetchEvents();
+                    confWindow.classList.add('d-none');
+                });
+                confWindowCancel1.addEventListener('click',()=>{
+                    calendar.refetchEvents();
+                    confWindow.classList.add('d-none');
+                });
+                confWindowConfirm.addEventListener('click', ()=>{
+                    updateEvent()
+                })
+                document.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        updateEvent();
+                    }
+                })
+                function updateEvent(){
+                    event_data = {
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                        id: event.event.id,
+                        description: event.event.extendedProps.description,
+                        start: moment(event.event.start).format(),
+                        end: moment(event.event.end).format(),
+                    },
+                    $.ajax({
+                        type: 'POST',
+                        datatype: 'json',
+                        url: "{% url 'event_update' %}",
+                        data: event_data,
+                        success: function(data){
+                            if (data.result == "success"){
+                                calendar.refetchEvents();
+                                confWindow.classList.add('d-none');
+                                showMessage('alert-success', "Updated Successfully!")
+                            }
+                            else if (data.result == "error"){
+                                calendar.refetchEvents();
+                                showMessage('alert-error','Something went wrong, please try again!')
+                            }
+                        },
+                        error: function(data){
+                            calendar.refetchEvents();
+                            showMessage('alert-error','Please check your internet and try again!')
+                        },
+                    })
+                }
+            },
+
+            businessHours: {
+                daysOfWeek: "{{user.parent.conf.calendar.work_days}}", // Monday, Tuesday, Wednesday, Thursday, Friday
+                startTime: '{{user.parent.conf.calendar.start_time|date:"H:i"}}', // 7am
+                endTime: '{{user.parent.conf.calendar.end_time|date:"H:i"}}', // 5pm
+            },
+            selectConstraint: "businessHours",
+            allDaySlot: false,
+            eventMinHeight: 10,
+            height: (window.innerHeight/100)*82,
+            // initialDate: today,
+            // initialView: 'timeGridWeek',
+            initialDate: dt,
+            initialView: iv,
+            datesSet: function (dateInfo) {
+                var dateView = dateInfo.startStr
+                localStorage.setItem("fcDefaultView", dateInfo.view.type);
+                localStorage.setItem("fcDefaultDate", dateInfo.startStr);
+            },
+            navLinks: true, // can click day/week names to navigate views
+            selectable: true,
+            selectMirror: true,
+            editable: true,
+            dayMaxEvents: true, // allow "more" link when too many events
+            // eventMaxStack: 5,
+            firstDay: '{{user.parent.conf.calendar.first_day}}',
+            slotDuration: "{{user.parent.conf.calendar.slot_duration}}",
+            slotMinTime: "06:00",
+            slotMaxTime: "21:00",
+            eventTimeFormat: {
+                hour: 'numeric',
+                minute: '2-digit',
+                meridiem: 'short',
+            },
+            
+        });
+        calendar.render();
+        
+    });
+    function closeAppointmentWindow(){
+        $("#eventModal").hide(200);
+        updateButton.classList.add('d-none');
+        submitButton.classList.remove('d-none');
+        submitButton.classList.add('d-inline-block');
+    }
+    
+
+    // search_customers function
+    function search_customers() {
+        let search_field = document.getElementById('searchbar').value
+        search_field=search_field.toLowerCase();
+        let x = document.getElementsByClassName('customers');
+        let search_list = document.getElementById('search_list');
+        search_list.classList.remove("d-none")
+
+        for (i = 0; i < x.length; i++) { 
+            if (!x[i].innerHTML.toLowerCase().includes(search_field)) {
+                x[i].style.display="none";
+            }
+            else {
+                x[i].style.display="block";
+            }
+        }
+    }
+    function option_selected(customerId, customerFullname) {
+        let search_field = document.getElementById('searchbar');
+        let search_list = document.getElementById('search_list');
+        search_field.value = customerFullname;
+        document.getElementById('id_event_customer').value = customerId;
+        search_list.style.display = "none";
+    }
+    function search_field_focused() {
+        let search_list = document.getElementById('search_list');
+        search_list.style.display = "block"
+    }
+    function search_field_blured(){
+        var container = document.getElementById('search_list');
+        document.addEventListener('click', function( event ) {
+            if (container != event.target && !container.innerText.includes(event.target)) {    
+                // console.log('clicking outside the div');
+                container.style.display = "none";
+            }else{
+                // console.log('click inside')
+            }
+        }, {once:true});
+    }
+    function customerAppointments(){
+        let customerId = document.getElementById('id_event_customer').value
+        window.location.href = ("/scheduler/appointments/" + customerId )
+    }
+    function customerDashboard(){
+        let customerId = document.getElementById('id_event_customer').value
+        window.location.href = ("/customer/customer_dashboard/" + customerId )
+    }
+
+    function showaddcustomerwindow(){
+        $("#add_customer_window").animate({height: "toggle"},200);
+    }
+    function hideaddcustomerwindow(){
+        $("#add_customer_window").hide(200);
+        document.getElementById('id_address').value = "";
+    }
+    function addNewCustomer(){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            first_name: $( "#id_first_name")[0].value,
+            last_name: $( "#id_last_name")[0].value,
+            email: $( "#id_email")[0].value,
+            number: $( "#id_number")[0].value,
+            address: $( "#id_address")[0].value,
+            business_name: $( "#id_business_name")[0].value,
+            business_abn: $( "#id_business_abn")[0].value,
+            privacy_policy: $( "#id_privacy_policy")[0].value,
+            terms_conditions: $( "#id_terms_conditions")[0].value,
+            promotions: $( "#id_promotions")[0].value,
+        };
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'ajax_add_customer' %}",
+            data: payload,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', data.message);
+                    hideaddcustomerwindow();
+                    option_selected(data.customer_id, data.customer_name);
+                    
+                    element = document.createElement("li");
+                    element.classList = "customers list-group-item btn-primary index-2";
+                    element.setAttribute("role","button");
+                    element.setAttribute("onclick","option_selected('" + data.customer_id + "','" + data.customer_name + "','" + data.customer_email + "','" + data.customer_number + "','" + data.customer_address + "','" + data.customer_business_name + "','" + data.customer_business_abn + "')");
+                    element.innerText = data.customer_name;
+                    $("#search_list")[0].appendChild(element);
+
+                    $( "#id_first_name")[0].value = '';
+                    $( "#id_last_name")[0].value = '';
+                    $( "#id_email")[0].value = '';
+                    $( "#id_number")[0].value = '';
+                    $( "#id_address")[0].value = '';
+                    $( "#id_business_name")[0].value = '';
+                    $( "#id_business_abn")[0].value = '';
+                    $( "#id_privacy_policy")[0].value = '';
+                    $( "#id_terms_conditions")[0].value = '';
+                    $( "#id_promotions")[0].value = '';
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.exception);
+                }
+            },
+            error: function(data){
+                console.log(data.exception)
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                displayLoadingSpinner(false);
+            }
+        })
+        return false;
+    }
+
+    function initMap() {
+        const componentForm = [
+            'location',
+        ];
+        const autocompleteInput = document.getElementById('id_address');
+        const autocomplete = new google.maps.places.Autocomplete(autocompleteInput, {
+            fields: ["address_components", "geometry", "name"],
+            types: ["address"],
+        });
+        autocomplete.addListener('place_changed', function () {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+                // User entered the name of a Place that was not suggested and
+                // pressed the Enter key, or the Place Details request failed.
+                // window.alert('No details available for input: \'' + place.name + '\'');
+                return;
+            }
+            fillInAddress(place);
+        });
+
+        function fillInAddress(place) {  // optional parameter
+            const addressNameFormat = {
+                'street_number': 'short_name',
+                'route': 'short_name',
+                'locality': 'long_name',
+                'administrative_area_level_1': 'short_name',
+                'country': 'short_name',
+                'postal_code': 'short_name',
+            };
+            const getAddressComp = function (type) {
+                for (const component of place.address_components) {
+                    if (component.types[0] === type) {
+                        return component[addressNameFormat[type]];
+                    }
+                }
+            return '';
+            };
+            document.getElementById('id_address').value = getAddressComp('street_number') + ' ' + getAddressComp('route') + ' ' + getAddressComp('locality') + ' ' + getAddressComp('administrative_area_level_1') + ' ' + getAddressComp('postal_code') + ' ' + getAddressComp('country');
+            for (const component of componentForm) {
+                // Location field is handled separately above as it has different logic.
+                if (component !== 'location') {
+                    document.getElementById(component).value = getAddressComp(component);
+                }
+            }
+        }
+    }
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYfuloZYC7wvMrfRxdmec2lRbwfSDZVP0&libraries=places&callback=initMap&solution_channel=GMP_QB_addressselection_v1_cA" async defer></script>
+
+
+{% endblock %}

@@ -1,0 +1,1264 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block css %}
+<script type="module" src="{% static 'frontend/cropperjs/dist/cropper.js' %}"></script>
+<link rel="stylesheet" href="{% static 'frontend/cropperjs/dist/cropper.css' %}">
+{% endblock %}
+{% block main %}
+
+<div class="container p-1 mw-1400px">
+    <h2 class="text-center m-2">
+        <span class="page-header">Settings</span>
+    </h2>
+
+    <div class="card text-center">
+        <div class="card-header bg-dark page-header">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link nav-link-sm active" id="business-toggle" data-bs-toggle="tab" data-bs-target="#business-tab" type="button" role="tab" aria-controls="business-tab" aria-selected="true">Business</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link nav-link-sm" id="account-toggle" data-bs-toggle="tab" data-bs-target="#account-tab" type="button" role="tab" aria-controls="account-tab" aria-selected="true">Account</a>
+                </li>
+                <li class="nav-item dropdown" role="presentation">
+                    <a class="nav-link nav-link-sm dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false">SMS</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" role="button" id="smsreminder-toggle" data-bs-toggle="tab" data-bs-target="#smsreminder-tab" aria-controls="smsreminder-tab" aria-selected="false">SMS Reminder</a></li>
+                        <li><a class="dropdown-item" role="button" id="onapproach-toggle" data-bs-toggle="tab" data-bs-target="#onapproach-tab" aria-controls="onapproach-tab" aria-selected="false">On Approach SMS</a></li>
+                        <li><a class="dropdown-item" role="button" id="selfsignup-toggle" data-bs-toggle="tab" data-bs-target="#selfsignup-tab" aria-controls="selfsignup-tab" aria-selected="false">Self Signup SMS</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link nav-link-sm" id="calendar-toggle" data-bs-toggle="tab" data-bs-target="#calendar-tab" type="button" role="tab" aria-controls="calendar-tab" aria-selected="false">Calendar</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link nav-link-sm" id="invoice-toggle" data-bs-toggle="tab" data-bs-target="#invoice-tab" type="button" role="tab" aria-controls="invoice-tab" aria-selected="false">Invoice</a>
+                </li>
+            </ul>
+        </div>
+        <div class="tab-content">
+            <!-- Business settings -->
+            <div id="business-tab" class="tab-pane fade show active" role="tabpanel" aria-labelledby="business-tab">
+                <div class="position-relative">
+                    <div id="business_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body text-start">
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <label for="id_business_name">Business Name</label>
+                                <input type="text" maxlength="30" class="form-control" id="id_business_name" placeholder="Business Name" {% if user.parent.business.name %}value="{{user.parent.business.name}}"{% endif %}>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_business_abn">Business ABN</label>
+                                <input type="text" maxlength="30" class="form-control" id="id_business_abn" placeholder="ABN/ACN" {% if user.parent.business.abn %}value="{{user.parent.business.abn}}"{% endif %}>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="id_business_address">Business Address</label>
+                                <input type="text" name="business_address" class="form-control" id="id_business_address" placeholder="Business Address" {% if user.parent.business.address %}value="{{user.parent.business.address}}"{% endif %}>
+                                <div class="d-none">
+                                    <input type="text" name="business_house_no" id="business_house_no" value="{{user.parent.business.address.house_no}}">
+                                    <input type="text" name="business_street" id="business_street" value="{{user.parent.business.address.street}}">
+                                    <input type="text" name="business_suburb" id="business_suburb" value="{{user.parent.business.address.suburb}}">
+                                    <input type="text" name="business_state" id="business_state" value="{{user.parent.business.address.state}}">
+                                    <input type="text" name="business_postcode" id="business_postcode" value="{{user.parent.business.address.postcode}}">
+                                    <input type="text" name="business_country" id="business_country" value="{{user.parent.business.address.country}}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_business_gst_registered">GST Registered</label>
+                                <select id="id_business_gst_registered" name="business_gst_registered" class="form-control">
+                                    <option value="0">-----</option>
+                                    <option {% if not user.parent.business.gst_registered %} selected {% endif %}value="0">No</option>
+                                    <option {% if user.parent.business.gst_registered %} selected {% endif %}value="1">Yes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_business_logo">Business LOGO</label>
+                                <div class="spinner-border text-primary d-none m-auto" role="status" id="id_logo_loading_spinner">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="w-200px m-auto mb-1" id="id_logo_cancel_confirm">
+                                    <div id="id_logo_confirm" class="float-end p-2">
+                                        <svg role="button" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-check-lg text-success" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg>
+                                    </div>
+                                    <div id="id_logo_cancel" class="p-2">
+                                        <svg role="button" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-x-lg text-danger" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <input type="file" class="d-none" name="business_logo" id="id_business_logo" onchange="readLogoURL(this)">
+                                <div class="d-block position-relative">
+                                    <div id="id_logo_image_edit_container" class="d-block w-200px mx-auto overflow-hidden">
+                                        <img class="4 mx-auto w-200px d-block shadow" id="id_business_logo_display" {% if user.parent.business.logo %} src="{{user.parent.business.logo.url}}" {% endif %} alt="" target="_blank">
+                                        <div id="id_logo_edit_container">
+                                            <button type="button" id="id_logo_edit" class="btn btn-primary">Edit</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="id_license_number">License Name</label>
+                                <input type="text" name="license_number" class="form-control" id="id_license_number" placeholder="License Number" {% if user.parent.business.license_number %} value="{{user.parent.business.license_number}}" {%endif%} maxlength="30">
+                            </div>
+                            <hr class="mt-3">
+                            <div class="text-center fs-4 my-0">Business Bank Account Details</div>
+                            <div class="col-md-6">
+                                <label for="id_bank_name">Bank Name</label>
+                                <input type="text" name="bank_name" class="form-control" id="id_bank_name" placeholder="Bank Name" {% if user.parent.business.bank_name %} value="{{user.parent.business.bank_name}}" {%endif%} maxlength="50">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_account_name">Account Name</label>
+                                <input type="text" name="account_name" class="form-control" id="id_account_name" placeholder="Account Name" {% if user.parent.business.account_name %} value="{{user.parent.business.account_name}}" {%endif%} maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_business_bsb">BSB </label><small id="business_bsb_Help" class="form-text text-muted"> XXX-XXX</small>
+                                <input type="text" name="business_bsb" class="form-control" id="id_business_bsb" placeholder="BSB Number" {% if user.parent.business.bsb %} value="{{user.parent.business.bsb}}" {%endif%} maxlength="9">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_business_account_number">Account Number</label><small id="business_account_numberHelp" class="form-text text-muted"> XXXX-XXXX</small>
+                                <input type="text" name="business_account_number" class="form-control" id="id_business_account_number" placeholder="Account Number" {% if user.parent.business.account_number %} value="{{user.parent.business.account_number}}" {%endif%} maxlength="14">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center bg-dark page-header">
+                        <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="businessAPI('PUT')">Update</button>
+                        <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="businessAPI('GET')">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account settings -->
+            <div id="account-tab" class="tab-pane fade" role="tabpanel" aria-labelledby="account-tab">
+                <div class="position-relative">
+                    <div id="settings_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body text-start">
+                        <div class="m-1 form-check form-switch">
+                            <label for="customers_visability" class="form-check-label">Allow Employee Accounts to see all Customers</label>
+                            <input type="checkbox" class="form-check-input" id="customers_visability" {% if user.conf.customers_visability %}checked{% endif %}>
+                        </div><hr>
+                        <div class="m-1 form-check form-switch">
+                            <label for="invoices_visability" class="form-check-label">Allow Employee Accounts to see all Invoices</label>
+                            <input type="checkbox" class="form-check-input" id="invoices_visability" {% if user.conf.invoices_visability %}checked{% endif %}>
+                        </div><hr>
+                        <div class="m-1 form-check form-switch">
+                            <label for="appointments_visability" class="form-check-label">Allow Employee Accounts to see all Appointments</label>
+                            <input type="checkbox" class="form-check-input" id="appointments_visability" {% if user.conf.appointments_visability %}checked{% endif %}>
+                        </div><hr>
+                        <div class="m-1 form-check form-switch">
+                            <label for="productslist_visability" class="form-check-label">Share admin account Products List with all employee accounts</label>
+                            <input type="checkbox" class="form-check-input" id="productslist_visability" {% if user.conf.productslist_visability %}checked{% endif %}>
+                        </div><hr>
+                        <div class="m-1 form-check form-switch">
+                            <label for="productslist_accessability" class="form-check-label">Allow admin account to see all created Products List</label>
+                            <input type="checkbox" class="form-check-input" id="productslist_accessability" {% if user.conf.productslist_accessability %}checked{% endif %}>
+                        </div><hr>
+                        <div class="m-1 form-check form-switch">
+                            <label for="quotesms_notification" class="form-check-label">Receive SMS Notification when a Quote is accepted or rejected.</label>
+                            <input type="checkbox" class="form-check-input top-50 start-0" id="quotesms_notification" {% if user.conf.quotesms_notification %}checked{% endif %}>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center bg-dark page-header">
+                        <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="settingsAPI('PUT')">Update</button>
+                        <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="settingsAPI('GET')">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SMS Settings -->
+
+                <!-- SMS Reminder -->
+            <div id="smsreminder-tab" class="tab-pane fade text-start" role="tabpanel" aria-labelledby="smsreminder-tab">
+                <div class="position-relative">
+                    <div id="sms_reminder_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="m-3 form-check form-switch">
+                            <label for="smsreminder_status" class="form-check-label">SMS Reminder Status
+                                <svg data-bs-toggle="tooltip" data-bs-placement="top" title="Activate SMS Reminder function by turning the status to ON and click the update button" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 20 20">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
+                                </svg>
+                            </label>
+                            <input type="checkbox" class="form-check-input" id="smsreminder_status" {% if user.conf.smsreminder_status %}checked{% endif %}>
+                        </div>
+                        <h6 class="card-subtitle">Use this template to customize the way your "SMS reminder" will look on your customers Phone.</h6><br>
+                        <span>Please use the below keywords to customize your message:</span><br>
+                        <span>{business_name} - {business_number} - {attendee_first_name} - {attendee_last_name} - {attendee_number} - {customer_name} - {customer_number} - {customer_address} - {appointment_start_time}</span><br><br>
+                        
+                        <div class="form-group">
+                            <label for="onapproach">SMS Template Builder:</label>
+                            <textarea class="form-control" id="smsreminder" rows="7">{{user.conf.smsreminder}}</textarea>
+                        </div>
+                        <span class="fs-8">Note: please copy and paste keywords including the brackets, those keywords will be replaced with the appropriate information based on the appointment details under your daily run Tab.</span>
+                        <div class="p-2 col-sm-12">
+                            <label for="smsreminder_time">SMS Reminder distribution time</label>
+                            <input type="time" class="form-control" id="smsreminder_time" placeholder="SMS Reminder Schedule Time" value="{{user.conf.smsreminder_time|date:'H:i:s'}}">
+                        </div>
+                        <span>All SMS reminders will be sent out a day before the appointment</span>
+                    </div>
+                    <div class="card-footer text-center bg-dark page-header">
+                        <div class="form-group row justify-content-center">
+                            <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="smsReminderUpdate()">Update</button>
+                            <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="smsReminderFeed()">Refresh</button>
+                            <button class="btn btn-warning col-sm-2 m-1" style="width:unset;" onclick="smsReminderReset()">Reset</button>
+                            <button class="btn btn-secondary col-sm-2 m-1" style="width:unset;" onclick="smsReminderTestSMS()">Test</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                
+                <!-- On Approach SMS -->
+            <div id="onapproach-tab" class="tab-pane fade text-start" role="tabpanel" aria-labelledby="onapproach-tab">
+                <div class="position-relative">
+                    <div id="onapproach_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle">Use this template to customize the way your "on approach SMS" will look on your Customers Phone.</h6><br>
+                        <span>Please use the below keywords to customize your message:</span><br>
+                        <span>{business_name} - {business_number} - {attendee_first_name} - {attendee_last_name} - {attendee_number} - {customer_name} - {customer_number} - {customer_address}</span><br><br>
+                        
+                        <div class="form-group">
+                            <label for="onapproach">SMS Template Builder:</label>
+                            <textarea class="form-control" id="onapproach" rows="6">{{user.conf.onapproach}}</textarea>
+                        </div>
+                        <span class="fs-8">Note: please copy and paste keywords including the brackets, those keywords will be replaced with the appropriate information based on the appointment details under your daily run Tab.</span>
+                    </div>
+                    <div class="card-footer text-center bg-dark page-header">
+                        <div class="form-group row justify-content-center">
+                            <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="onApproachUpdate()">Update</button>
+                            <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="onApproachFeed()">Refresh</button>
+                            <button class="btn btn-warning col-sm-2 m-1" style="width:unset;" onclick="onApproachReset()">Reset</button>
+                            <button class="btn btn-secondary col-sm-2 m-1" style="width:unset;" onclick="onApproachTestSMS()">Test</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Self Signup SMS -->
+            <div id="selfsignup-tab" class="tab-pane fade text-start" role="tabpanel" aria-labelledby="selfsignup-tab">
+                <div class="position-relative">
+                    <div id="selfsignup_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle">Use this template to customize the way your "Self Signup SMS" will look on your Customers Phone.</h6><br>
+                        <span>Please note: link is valid for 24 hours.</span><br>
+                        <span>Please use the below keywords to customize your message:</span><br>
+                        <span>{business_name} - {business_number} - {sender_first_name} - {sender_last_name} - {sender_number} - {signup_link}</span><br><br>
+                        
+                        <div class="form-group">
+                            <label for="self_signup">SMS Template Builder:</label>
+                            <textarea class="form-control" id="self_signup" rows="3">{{user.conf.selfsignupsms}}</textarea>
+                        </div>
+                        <span class="fs-8">Note: please copy and paste keywords including the brackets, those keywords will be replaced with the appropriate information based on the appointment details under your daily run Tab.</span>
+                    </div>
+                    <div class="card-footer text-center bg-dark page-header">
+                        <div class="form-group row justify-content-center">
+                            <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="selfSignupUpdate()">Update</button>
+                            <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="selfSignupFeed()">Refresh</button>
+                            <button class="btn btn-warning col-sm-2 m-1" style="width:unset;" onclick="selfSignupReset()">Reset</button>
+                            <button class="btn btn-secondary col-sm-2 m-1" style="width:unset;" onclick="selfSignupTestSMS()">Test</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Settings -->
+            <div id="calendar-tab" class="tab-pane fade" role="tabpanel" aria-labelledby="calendar-tab">
+                <div class="position-relative">
+                    <div id="calendar_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6>Work Days:</h6>
+                            <label for="calendar_sunday" class="form-check-label">Sunday</label>
+                            <input type="checkbox" class="form-check-input workday" id="calendar_sunday"{%if '0' in user.parent.conf.calendar.work_days%} checked{%endif%}>
+                            <label for="calendar_monday" class="form-check-label">Monday</label>
+                            <input type="checkbox" class="form-check-input workday" id="calendar_monday"{%if '1' in user.parent.conf.calendar.work_days%} checked{%endif%}>
+                            <label for="calendar_tuesday" class="form-check-label">Tuesday</label>
+                            <input type="checkbox" class="form-check-input workday" id="calendar_tuesday"{%if '2' in user.parent.conf.calendar.work_days%} checked{%endif%}>
+                            <label for="calendar_wednesday" class="form-check-label">Wednesday</label>
+                            <input type="checkbox" class="form-check-input workday" id="calendar_wednesday"{%if '3' in user.parent.conf.calendar.work_days%} checked{%endif%}>
+                            <label for="calendar_thursday" class="form-check-label">Thursday</label>
+                            <input type="checkbox" class="form-check-input workday" id="calendar_thursday"{%if '4' in user.parent.conf.calendar.work_days%} checked{%endif%}>
+                            <label for="calendar_friday" class="form-check-label">Friday</label>
+                            <input type="checkbox" class="form-check-input workday" id="calendar_friday"{%if '5' in user.parent.conf.calendar.work_days%} checked{%endif%}>
+                            <label for="calendar_saturday" class="form-check-label">Saturday</label>
+                            <input type="checkbox" class="form-check-input workday" id="calendar_saturday"{%if '6' in user.parent.conf.calendar.work_days%} checked{%endif%}>
+                        <hr>
+                        <h6>Work Hours:</h6>
+                        <div class="row mb-2">
+                            <div class="col-sm-6">
+                                <label for="calendar_starttime">Start Time</label>
+                                <input type="time" class="form-control" id="calendar_starttime" placeholder="Calendar Start Time" value="{{user.conf.calendar.start_time|date:'H:i:s'}}">
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="calendar_endtime">End Time</label>
+                                <input type="time" class="form-control" id="calendar_endtime" placeholder="Calendar End Time" value="{{user.conf.calendar.end_time|date:'H:i:s'}}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <label for="calendar_firstday">First Day of the week</label>
+                                <select class="form-select" id="calendar_firstday">
+                                    <option value="0" {%if user.conf.calendar.first_day == "0"%}selected{%endif%}>Sunday</option>
+                                    <option value="1" {%if user.conf.calendar.first_day == "1"%}selected{%endif%}>Monday</option>
+                                    <option value="2" {%if user.conf.calendar.first_day == "2"%}selected{%endif%}>Tuesday</option>
+                                    <option value="3" {%if user.conf.calendar.first_day == "3"%}selected{%endif%}>Wednesday</option>
+                                    <option value="4" {%if user.conf.calendar.first_day == "4"%}selected{%endif%}>Thursday</option>
+                                    <option value="5" {%if user.conf.calendar.first_day == "5"%}selected{%endif%}>Friday</option>
+                                    <option value="6" {%if user.conf.calendar.first_day == "6"%}selected{%endif%}>Saturday</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6 mt-2">
+                                <label for="calendar_slotduration">Minimum Appointment Duration</label>
+                                <select class="form-select" id="calendar_slotduration" value="{{user.conf.calendar.slot_duration}}">
+                                    <option value="00:15" {%if user.conf.calendar.slot_duration == "00:15"%}selected{%endif%}>15 Min</option>
+                                    <option value="00:30" {%if user.conf.calendar.slot_duration == "00:30"%}selected{%endif%}>30 Min</option>
+                                    <option value="00:45" {%if user.conf.calendar.slot_duration == "00:45"%}selected{%endif%}>45 Min</option>
+                                    <option value="01:00" {%if user.conf.calendar.slot_duration == "01:00"%}selected{%endif%}>60 Min</option>
+                                    <option value="01:30" {%if user.conf.calendar.slot_duration == "01:30"%}selected{%endif%}>90 Min</option>
+                                    <option value="02:00" {%if user.conf.calendar.slot_duration == "02:00"%}selected{%endif%}>120 Min</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-12 mt-2">
+                                <label for="calendar_title">Appointment Title 
+                                    <svg data-bs-toggle="tooltip" data-bs-placement="top" title="This option controls what prints out in the calendar page under the appointment time slot of each appointment" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 20 20">
+                                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
+                                    </svg>
+                                </label>
+                                <select class="form-select" id="calendar_title" value="{{user.conf.calendar.title}}">
+                                    <option value="event_account" {%if user.conf.calendar.title == "event_account"%}selected{%endif%}>Appointment Attendee Name</option>
+                                    <option value="event_parent" {%if user.conf.calendar.title == "event_parent"%}selected{%endif%}>Appointment Admin Account Name</option>
+                                    <option value="event_customer" {%if user.conf.calendar.title == "event_customer"%}selected{%endif%}>Appointment Customer Name</option>
+                                    <option value="event_description" {%if user.conf.calendar.title == "event_description"%}selected{%endif%}>Appointment Description</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center bg-dark page-header">
+                        <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="calendarAPI('PUT')">Update</button>
+                        <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="calendarAPI('GET')">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Settings -->
+            <div id="invoice-tab" class="tab-pane fade" role="tabpanel" aria-labelledby="invoice-tab">
+                <div class="position-relative">
+                    <div id="invoice_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body text-start">
+                        <div class="px-2">
+                            <span for="initial_invoice" class="form-label">Initial Invoice Number: 
+                                <svg data-bs-toggle="tooltip" data-bs-placement="top" title="Please Enter your Last Created Invoice Number so we Can Continue on, Otherwise leave as 0 and your next created invoice number will be 1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 20 20">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
+                                </svg>
+                            </span>
+                            <input type="text" id="initial_invoice" class="form-control" value="{% if user.conf.initial_invoice != '' %}{{user.conf.initial_invoice}}{% endif %}">
+                        </div><hr>
+
+                        <h5 class="text-center">Invoice Footer</h5>
+                        <div class="form-group">
+                            <label for="invoice_footer">Invoice Footer:
+                                <svg data-bs-toggle="tooltip" data-bs-placement="top" title="What you add here will be printed at the bottom of the invoice like a company specific Terms and condition, or warranty details; e.g. 'Please pay by the due date to avoid late fee charges'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 20 20">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
+                                </svg>
+                            </label>
+                            <textarea class="form-control" id="invoice_footer" rows="7">{{user.conf.invoice_footer}}</textarea>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center bg-dark page-header">
+                        <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="invoiceAPI('PUT')">Update</button>
+                        <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="invoiceAPI('GET')">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block script %}
+
+<script>
+    // Business API
+    enableLogoImageOverlay()
+
+    let cropper, imageFile, base64ImageString, cropX, cropY, cropWidth, cropHeight, cropRotation;
+    function displayLogoLoadingSpinner(isDisplayed){
+		var spinner = document.getElementById("id_logo_loading_spinner")
+		if(isDisplayed){
+			spinner.classList.remove("d-none")
+            spinner.classList.add("d-block")
+		}
+		else{
+			spinner.classList.remove("d-block")
+            spinner.classList.add("d-none")
+		}
+	}
+    function setImageCropProperties(image, x, y, width, height, rotate){
+        imageFile = image
+        cropX = x
+        cropY = y
+        cropWidth = width
+        cropHeight = height
+        cropRotation = rotate
+    }
+    function readLogoURL(input){
+        if(input.files && input.files[0]){
+            var reader = new FileReader()
+            reader.onload = function(e){
+                disableLogoImageOverlay()
+                var image = e.target.result
+                var imageField = document.getElementById("id_business_logo_display")
+                imageField.src = image
+                cropper = new Cropper(imageField, {
+                    aspectRatio: 1/1,
+                    viewMode: 2,
+                    crop(event){
+                        setImageCropProperties(
+                            image,
+                            event.detail.x,
+                            event.detail.y,
+                            event.detail.width,
+                            event.detail.height,
+                            event.detail.rotate,
+                        )
+                    }
+                })
+            }
+            reader.readAsDataURL(input.files[0])
+        }
+    }
+    function enableLogoImageOverlay(){
+        let edit = document.getElementById("id_logo_edit")
+        edit.style.cursor = "pointer"
+
+        let profileImage = document.getElementById("id_business_logo_display")
+        profileImage.style.opacity = "1"
+        profileImage.style.transition = ".5s ease"
+        profileImage.style.backfaceVisibility = "hidden"
+        profileImage.style.cursor = "pointer"
+
+        let editContainer = document.getElementById("id_logo_edit_container")
+        editContainer.style.opacity = "0.3"
+        editContainer.style.position = "absolute"
+        editContainer.style.top = "50%"
+        editContainer.style.left = "50%"
+        editContainer.style.transform = "translate(-50%, 0%)"
+
+        let imageEditContainer = document.getElementById("id_logo_image_edit_container")
+        imageEditContainer.addEventListener("mouseover", function(event){
+            profileImage.style.opacity = "0.5"
+            editContainer.style.opacity = "0.9"
+        })
+
+        imageEditContainer.addEventListener("mouseout", function(event){
+            profileImage.style.opacity = "1"
+            editContainer.style.opacity = "0.3"
+        })
+        imageEditContainer.addEventListener("click", function(event){
+            document.getElementById("id_business_logo").click()
+        })
+        let cropConfrim = document.getElementById("id_logo_cancel_confirm")
+        cropConfrim.classList.add("d-none")
+    }
+    function disableLogoImageOverlay(){
+        let profileImage = document.getElementById("id_business_logo_display")
+        let edit = document.getElementById("id_logo_edit")
+        let editContainer = document.getElementById("id_logo_edit_container")
+        let imageEditContainer = document.getElementById("id_logo_image_edit_container")
+
+        imageEditContainer.removeEventListener("mouseover", function(event){})
+        imageEditContainer.removeEventListener("mouseout", function(event){})
+        
+        profileImage.style.opacity = "1"
+        editContainer.style.opacity = "0"
+        edit.style.cursor = "default"
+        edit.style.opacity = "0"
+
+        imageEditContainer.removeEventListener("click", function(event){
+            event.preventDefault()
+        })
+
+        document.getElementById("id_business_logo").addEventListener("click", function(event){
+            event.preventDefault()
+        })
+        
+        let cropConfrim = document.getElementById("id_logo_cancel_confirm")
+        cropConfrim.classList.remove("d-none")
+        cropConfrim.classList.add("d-block")
+
+        var confirm = document.getElementById("id_logo_confirm")
+        confirm.addEventListener("click", function(event){
+            cropLogoImage(imageFile, cropX, cropY, cropWidth, cropHeight, cropRotation)
+            
+        })
+
+        var cancel = document.getElementById("id_logo_cancel")
+        cancel.addEventListener("click", function(event){
+            window.location.reload();
+        })
+    }
+    function cropLogoImage(image, x, y, width, height, rotate){
+        var extStartIndex = image.indexOf("image/") + 6
+        var extEndIndex = image.indexOf(";base64")
+        var extString = image.substr(extStartIndex, extEndIndex - extStartIndex)
+        
+        var startIndex = image.indexOf("base64,") + 7
+        var base64str = image.substr(startIndex)
+        var decoded = atob(base64str);
+        var inkb = (decoded.length / 1000000).toFixed(2)
+		console.log("FileSize: " + inkb + " MB")
+        var requestData = {
+            "csrfmiddlewaretoken": "{{csrf_token}}",
+            "image": base64str,
+            "cropX": x,
+            "cropY": y,
+            "cropWidth": width,
+            "cropHeight": height,
+            "imageExt": extString,
+            "rotation": rotate,
+            "id": "{{user.id}}",
+        }
+        displayLogoLoadingSpinner(true)
+        $.ajaxSetup({timeout:120000})
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "{% url 'crop_logo' user.id %}",
+            data: requestData,
+            timeout: 120000,
+            success: function(data){
+                if(data.result == "success"){
+                    document.getElementById("id_logo_cancel").click()
+                    
+                }
+                else if(data.result == "error"){
+                    document.getElementById("id_logo_cancel").click()
+                }
+            },
+            error: function(data){
+                console.error('something went wrong')
+                console.log(data.result)
+                console.log(data.exception)
+                
+            },
+            complete: function(data){
+                displayLogoLoadingSpinner(false)
+            }
+        })
+        
+
+    }
+
+    function initMap() {
+        const componentForm1 = [
+            'location',
+        ];
+        const autocompleteInput1 = document.getElementById('id_business_address');
+        const autocomplete1 = new google.maps.places.Autocomplete(autocompleteInput1, {
+            fields: ["address_components", "geometry", "name"],
+            types: ["address"],
+        });
+        autocomplete1.setComponentRestrictions({
+            country: ["AU"],
+        });
+        autocomplete1.addListener('place_changed', function () {
+            const place1 = autocomplete1.getPlace();
+            if (!place1.geometry) {
+                showMessage('alert-error','Please select an address from the dropdown list.')
+                // User entered the name of a Place that was not suggested and
+                // pressed the Enter key, or the Place Details request failed.
+                // window.alert('No details available for input: \'' + place.name + '\'');
+                return;
+            }
+            fillInAddress1(place1);
+        });
+        function fillInAddress1(place1) {  // optional parameter
+            const addressNameFormat1 = {
+                'street_number': 'long_name',
+                'route': 'short_name',
+                'locality': 'long_name',
+                'administrative_area_level_1': 'short_name',
+                'country': 'long_name',
+                'postal_code': 'short_name',
+            };
+            const getAddressComp1 = function (type1) {
+                for (const component1 of place1.address_components) {
+                    if (component1.types[0] === type1) {
+                        return component1[addressNameFormat1[type1]];
+                    }
+                }
+            return '';
+            };
+            document.getElementById('id_business_address').value = getAddressComp1('street_number') + ' ' + getAddressComp1('route') + ' ' + getAddressComp1('locality') + ' ' + getAddressComp1('administrative_area_level_1') + ' ' + getAddressComp1('postal_code') + ' ' + getAddressComp1('country');
+            $("#business_house_no")[0].value = getAddressComp1('street_number')
+            $("#business_street")[0].value = getAddressComp1('route')
+            $("#business_suburb")[0].value = getAddressComp1('locality')
+            $("#business_state")[0].value = getAddressComp1('administrative_area_level_1')
+            $("#business_postcode")[0].value = getAddressComp1('postal_code')
+            $("#business_country")[0].value = getAddressComp1('country')
+            for (const component1 of componentForm1) {
+                // Location field is handled separately above as it has different logic.
+                if (component1 !== 'location') {
+                    document.getElementById(component1).value = getAddressComp1(component1);
+                }
+            }
+        }
+    }
+
+    function businessSpinner(status){
+        if (status){
+            $("#business_loading_spinner").show()
+        }else{
+            $("#business_loading_spinner").hide()
+        }
+    }
+    function businessAPI(apiCode){
+        businessSpinner(true);
+
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            action: apiCode,
+            business_name: $("#id_business_name")[0].value,
+            business_abn: $("#id_business_abn")[0].value,
+            business_house_no: $("#business_house_no")[0].value,
+            business_street: $("#business_street")[0].value,
+            business_suburb: $("#business_suburb")[0].value,
+            business_state: $("#business_state")[0].value,
+            business_postcode: $("#business_postcode")[0].value,
+            business_country: $("#business_country")[0].value,
+            gst_registered: $("#id_business_gst_registered")[0].value,
+            license_number: $("#id_license_number")[0].value,
+            bank_name: $("#id_bank_name")[0].value,
+            account_name: $("#id_account_name")[0].value,
+            bsb: $("#id_business_bsb")[0].value,
+            account_number: $("#id_business_account_number")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'business_api' %}",
+            data: payload,
+            success: function(data){
+                console.log(data)
+                if (data.result == "success"){
+                    $("#id_business_name")[0].value = data.business_name;
+                    $("#id_business_abn")[0].value = data.business_abn;
+                    $("#id_business_address")[0].value = data.business_address;
+                    $("#business_house_no")[0].value = data.business_house_no;
+                    $("#business_street")[0].value = data.business_street;
+                    $("#business_suburb")[0].value = data.business_suburb;
+                    $("#business_state")[0].value = data.business_state;
+                    $("#business_postcode")[0].value = data.business_postcode;
+                    $("#business_country")[0].value = data.business_country;
+                    $("#id_business_gst_registered")[0].value = data.gst_registered;
+                    $("#id_license_number")[0].value = data.license_number;
+                    $("#id_bank_name")[0].value = data.bank_name;
+                    $("#id_account_name")[0].value = data.account_name;
+                    $("#id_business_bsb")[0].value = data.bsb;
+                    $("#id_business_account_number")[0].value = data.account_number;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                businessSpinner(false);
+            },
+        })
+    }
+
+
+
+    //On-Approach SMS
+    function onapproachSpinner(status){
+        if (status){
+            $("#onapproach_loading_spinner").show()
+        }else{
+            $("#onapproach_loading_spinner").hide()
+        }
+    }
+    function onApproachUpdate(){
+        onapproachSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: $("#onapproach")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'onapproach_update' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#onapproach")[0].value = data.onapproach;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                    onApproachFeed();
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                onapproachSpinner(false);
+            },
+        })
+    }
+    function onApproachFeed(){
+        onapproachSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'onapproach_feed' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#onapproach")[0].value = data.onapproach;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                onapproachSpinner(false);
+            },
+        })
+    }
+    function onApproachTestSMS(){
+        onapproachSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: $("#onapproach")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'onapproach_testsms' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                onapproachSpinner(false);
+            },
+        })
+    }
+    function onApproachReset(){
+        onapproachSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: "[{business_name}] Hello {customer_name}, one of our team members is heading to {customer_address}, Please expect us shortly. if the address is incorrect or you aren't the intended person please call us on {attendee_number} to let us Know. Thank you!",
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'onapproach_update' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#onapproach")[0].value = data.onapproach;
+                    showMessage('alert-success', "Reset and "+data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                    onApproachFeed();
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                onapproachSpinner(false);
+            },
+        })
+    }
+
+    //SMS Reminder
+    function smsReminderSpinner(status){
+        if (status){
+            $("#sms_reminder_loading_spinner").show()
+        }else{
+            $("#sms_reminder_loading_spinner").hide()
+        }
+    }
+    function smsReminderUpdate(){
+        smsReminderSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: $("#smsreminder")[0].value,
+            time: $("#smsreminder_time")[0].value,
+            status: $("#smsreminder_status")[0].checked,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'smsreminder_update' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#smsreminder")[0].value = data.smsreminder;
+                    $("#smsreminder_time")[0].value = data.smsreminder_time;
+                    $("#smsreminder_status")[0].checked = data.smsreminder_status;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                    smsReminderFeed();
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                smsReminderSpinner(false);
+            },
+        })
+    }
+    function smsReminderFeed(){
+        smsReminderSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'smsreminder_feed' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#smsreminder")[0].value = data.smsreminder;
+                    $("#smsreminder_time")[0].value = data.smsreminder_time;
+                    $("#smsreminder_status")[0].checked = data.smsreminder_status;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                smsReminderSpinner(false);
+            },
+        })
+    }
+    function smsReminderTestSMS(){
+        smsReminderSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: $("#smsreminder")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'smsreminder_testsms' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                smsReminderSpinner(false);
+            },
+        })
+    }
+    function smsReminderReset(){
+        smsReminderSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: "[{business_name}] Hello {customer_name}, you have an appointment with us tomorrow at {appointment_start_time}, {attendee_first_name} will be attending address: {customer_address}. if the address is incorrect or you aren't the intended person please call us on {attendee_number} to let us Know. Thank you!",
+            time: $("#smsreminder_time")[0].value,
+            status: $("#smsreminder_status")[0].checked,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'smsreminder_update' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#smsreminder")[0].value = data.smsreminder;
+                    $("#smsreminder_time")[0].value = data.smsreminder_time;
+                    $("#smsreminder_status")[0].checked = data.smsreminder_status;
+                    showMessage('alert-success', "Reset and "+data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                    onApproachFeed();
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                smsReminderSpinner(false);
+            },
+        })
+    }
+
+    //On-Approach SMS
+    function selfSignupSpinner(status){
+        if (status){
+            $("#selfsignup_loading_spinner").show()
+        }else{
+            $("#selfsignup_loading_spinner").hide()
+        }
+    }
+    function selfSignupUpdate(){
+        selfSignupSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: $("#self_signup")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'self_signup_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#self_signup")[0].value = data.self_signup;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                    onApproachFeed();
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                selfSignupSpinner(false);
+            },
+        })
+    }
+    function selfSignupFeed(){
+        selfSignupSpinner(true);
+        payload = {
+            id: '{{user.id}}',
+        },
+        $.ajax({
+            type: 'GET',
+            datatype: 'json',
+            url: "{% url 'self_signup_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#self_signup")[0].value = data.self_signup;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                selfSignupSpinner(false);
+            },
+        })
+    }
+    function selfSignupTestSMS(){
+        selfSignupSpinner(true);
+        payload = {
+            id: '{{user.id}}',
+            message: $("#self_signup")[0].value,
+        },
+        $.ajax({
+            type: 'PUT',
+            datatype: 'json',
+            headers: {"X-CSRFToken":"{{csrf_token}}"},
+            url: "{% url 'self_signup_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                selfSignupSpinner(false);
+            },
+        })
+    }
+    function selfSignupReset(){
+        selfSignupSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            message: "[{business_name}] Hello, Please use the link below to complete our signup form {signup_link} link is valid for 24 hours, Thank you!",
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'self_signup_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#self_signup")[0].value = data.self_signup;
+                    showMessage('alert-success', "Reset and "+data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                    selfSignupFeed();
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                selfSignupSpinner(false);
+            },
+        })
+    }
+    
+
+    //Settings API
+    function settingsSpinner(status){
+        if (status){
+            $("#settings_loading_spinner").show()
+        }else{
+            $("#settings_loading_spinner").hide()
+        }
+    }
+    function settingsAPI(apiCode){
+        settingsSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            action: apiCode,
+            id: '{{user.id}}',
+            productslist_visability: $("#productslist_visability")[0].checked,
+            customers_visability: $("#customers_visability")[0].checked,
+            quotesms_notification: $("#quotesms_notification")[0].checked,
+            productslist_accessability: $("#productslist_accessability")[0].checked,
+            invoices_visability: $("#invoices_visability")[0].checked,
+            appointments_visability: $("#appointments_visability")[0].checked,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'settings_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#productslist_visability")[0].checked = data.productslist_visability;
+                    $("#customers_visability")[0].checked = data.customers_visability;
+                    $("#quotesms_notification")[0].checked = data.quotesms_notification;
+                    $("#productslist_accessability")[0].checked = data.productslist_accessability;
+                    $("#invoices_visability")[0].checked = data.invoices_visability;
+                    $("#appointments_visability")[0].checked = data.appointments_visability;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                settingsSpinner(false);
+            },
+        })
+    }
+    
+    //Calendar API
+    function calendarSpinner(status){
+        if (status){
+            $("#calendar_loading_spinner").show()
+        }else{
+            $("#calendar_loading_spinner").hide()
+        }
+    }
+    function calendarAPI(action){
+        calendarSpinner(true);
+        let list = $(".workday")
+        let workDays = []
+        for (i=0;i<list.length;i++){
+            if ($(".workday")[i].checked){workDays.push(i)}
+        }
+        console.log(workDays)
+
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            action: action,
+            work_days: workDays,
+            start_time: $("#calendar_starttime")[0].value,
+            end_time: $("#calendar_endtime")[0].value,
+            first_day: $("#calendar_firstday")[0].value,
+            slot_duration: $("#calendar_slotduration")[0].value,
+            title: $("#calendar_title")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'calendar_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#calendar_monday")[0].checked = data.monday;
+                    $("#calendar_tuesday")[0].checked = data.tuesday;
+                    $("#calendar_wednesday")[0].checked = data.wednesday;
+                    $("#calendar_thursday")[0].checked = data.thursday;
+                    $("#calendar_friday")[0].checked = data.friday;
+                    $("#calendar_saturday")[0].checked = data.saturday;
+                    $("#calendar_sunday")[0].checked = data.sunday;
+                    $("#calendar_starttime")[0].value = data.start_time;
+                    $("#calendar_endtime")[0].value = data.end_time;
+                    $("#calendar_firstday")[0].value = data.first_day;
+                    $("#calendar_slotduration")[0].value = data.slot_duration;
+                    $("#calendar_title")[0].value = data.title;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                calendarSpinner(false);
+            },
+        })
+    }
+
+    //Invoice API
+    function invoiceSpinner(status){
+        if (status){
+            $("#invoice_loading_spinner").show()
+        }else{
+            $("#invoice_loading_spinner").hide()
+        }
+    }
+    function invoiceAPI(apiCode){
+        invoiceSpinner(true);
+
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: '{{user.id}}',
+            action: apiCode,
+            initial_invoice: $("#initial_invoice")[0].value,
+            invoice_footer: $("#invoice_footer")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'invoice_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#initial_invoice")[0].value = data.initial_invoice;
+                    $("#invoice_footer")[0].value = data.invoice_footer;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                invoiceSpinner(false);
+            },
+        })
+    }
+
+
+    //Initiate ToolTip
+    activateToolTip()
+    
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYfuloZYC7wvMrfRxdmec2lRbwfSDZVP0&libraries=places&callback=initMap&solution_channel=GMP_QB_addressselection_v1_cA" async defer></script>
+
+{% endblock %}

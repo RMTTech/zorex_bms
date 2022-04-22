@@ -1,0 +1,1333 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+<div id="id_displayed_area" class="container p-2 mw-1400px mt-1">
+    <div class="d-flex justify-content-around flex-wrap">
+        <div id="id_customer_details" class="card shadow bg-light mb-2 mobilecard">
+            <div class="card-header bg-dark page-header">
+                <h4 class="card-title text-center m-auto">Customer Details</h4>
+            </div>
+            <div class="card-body">
+                <table>
+                    <tbody>
+                        <tr class="text-break">
+                            <td>Name:</td>
+                            <td>{{customer.name}}</td>
+                        </tr>
+                        <tr class="text-break">
+                            <td>Email:</td>
+                            <td><a href="mailto:{{customer.email}}">{{customer.email}}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Number:</td>
+                            <td><a href="tel:{{customer.number}}">{{customer.number}}</a></td>
+                        </tr>
+                        <tr class="text-break">
+                            <td>Address:</td>
+                            <td><a target="_blank" href="http://maps.google.com/?q={{customer.address}}">{{customer.address}}</a></td>
+                        </tr>
+                        <tr class="text-break">
+                            <td>Business:</td>
+                            <td>{% if customer.business_name %}{{customer.business_name}}{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td>ABN/ACN:</td>
+                            <td>{% if customer.business_abn %}{{customer.business_abn}}{% endif %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-dark page-header text-center">
+                <button class="btn btn-sm btn-success px-4 m-1" onclick="editCustomer({{customer.id}})">Edit</button>
+                <button class="btn btn-sm btn-danger px-3 m-1" onclick="deleteCustomer({{customer.id}})">Delete</button>
+            </div>
+        </div>
+        <div id="id_list_of_appointments" class="card shadow bg-light mb-2 mobilecard" >
+            <div class="card-header bg-dark page-header">
+                <h4 class="card-title text-center m-auto">List of Appointments</h4>
+            </div>
+            <div class="card-body">
+                <div style="max-height: 20rem; overflow: auto;">
+                    {% for appointment in customer.appointments.all %}
+                    {% if not appointment.is_deleted %}
+                    <div id="container{{appointment.id}}" class="position-relative">
+                        <div id="id_unlock{{appointment.id}}" class="disable-card {% if not appointment.completed %}d-none{%endif%}">
+                            <div class="text-center" style="margin-top: 20%;">
+                                <button onclick="unlockApp({{appointment.id}})" class="btn btn-dark">Unlock Appointment</button>
+                            </div>
+                        </div>
+                        <table class="position-relative">
+                            <tbody>
+                                <tr>
+                                    <td>Attendee:</td>
+                                    <td>{{appointment}}<input class="d-none" id="event_account{{appointment.id}}" value="{{appointment.event_account.id}}"><input class="d-none" id="event_customer{{appointment.id}}" value="{{appointment.event_customer}}"></td>
+                                </tr>
+                                <tr>
+                                    <td>Description:</td>
+                                    <td id="event_description{{appointment.id}}">{{appointment.description}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Start Time:<input class="d-none" id="event_start{{appointment.id}}" value="{{appointment.start|date:'Y-m-d\TH:i'}}"></td>
+                                    <td>{{appointment.start|date:"d M Y g:i A"}}</td>
+                                </tr>
+                                {%if appointment.onsite_time%}
+                                <tr>
+                                    <td>On Site Time:</td>
+                                    <td>{{appointment.onsite_time|date:"d M Y g:i A"}}</td>
+                                </tr>
+                                {%endif%}
+                                <tr>
+                                    <td>End Time<input class="d-none" id="event_end{{appointment.id}}" value="{{appointment.end|date:'Y-m-d\TH:i'}}"></td>
+                                    <td>{{appointment.end|date:"d M Y g:i A"}}</td>
+                                </tr>
+                                {%if appointment.completed_time%}
+                                <tr>
+                                    <td>Completed Time:</td>
+                                    <td>{{appointment.completed_time|date:"d M Y g:i A"}}</td>
+                                </tr>
+                                {%endif%}
+                                <tr>
+                                    <td>On Approach SMS</td>
+                                    <td class="text-center">{%if appointment.onapproachsms%}Yes{%else%}No{%endif%}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="text-center mt-3">
+                            <a id="id_onapproachsms{{appointment.id}}" role="button" class="btn btn-sm btn-primary fs-8 my-2 {% if appointment.onapproachsms %}disabled{% endif %}" onclick="sendOnApproach({{appointment.id}})">On Approach SMS</a>
+                            <a id="id_onsite{{appointment.id}}" role="button" class="btn btn-sm btn-dark fs-8 my-2 {% if appointment.onsite %}d-none{% endif %}" onclick="jobOnSite({{appointment.id}})">On-Site</a>
+                            <a id="id_completed{{appointment.id}}" role="button" class="btn btn-sm btn-dark fs-8 my-2 {% if not appointment.onsite %}d-none{% endif %} {% if appointment.completed %}disabled{% endif %}" onclick="jobCompleted({{appointment.id}})">Complete</a>
+                            <a role="button" class="btn btn-sm btn-info fs-8 my-2" onclick="appointmentWindow(true,{{appointment.id}})">Edit</a>
+                            <a role="button" class="btn btn-sm btn-danger fs-8 my-2" onclick="delete_appointment({{appointment.id}})">Delete</a>
+                        </div>
+                        <hr>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-dark page-header text-center">
+                <a role="button" class="btn btn-sm btn-primary m-1" onclick='appointmentWindow(true)'>Create New</a>
+            </div>
+        </div>
+        <div id="id_quotes_and_invoices" class="card shadow bg-light mb-2 mobilecard">
+            <div class="card-header bg-dark page-header">
+            <h4 class="card-title text-center m-auto">Quotes and Invoices</h4>
+            </div>
+            <div class="card-body" style="max-height: 28rem; overflow: auto;">
+                {% for invoice in invoices %}
+                <ul class="list-group">
+                    <li class="list-group-item px-1 py-2 w-100" data-bs-toggle="collapse" href="#collapse{{invoice.id}}" role="button" aria-expanded="false" aria-controls="collapse{{invoice.id}}">
+                        <span class="px-3">{{invoice.title}} {{invoice.invoice_no}}</span>
+                        <span class="float-end px-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-caret-down-fill" viewBox="0 0 16 16">
+                                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
+                            </svg>
+                        </span>
+                    </li>
+                </ul>
+                
+                <div class="collapse mb-2 position-relative border" id="collapse{{invoice.id}}">
+                    <div id="id_payment_update_window{{invoice.id}}" class="backdrop rounded-3 index-4" style="width: 100%; height: 100%; display: none; position: absolute;">
+                        <div class="payment_update_window">
+                            <h6 class="modal-title m-2">Update Amount Received
+                                <button class="btn btn-danger btn-sm float-end" onclick="closePaymentWindow({{invoice.id}})">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </h6><hr class="m-2">
+                            <div class="mx-4">
+                                Amount Received
+                                <input id="id_amount_received_input{{invoice.id}}" class="form-control my-2" style="width: 50%;" type="text" value="{{invoice.amount_received}}">
+                                <input id="id_total_value_input{{invoice.id}}" class="d-none" type="text" value="{{invoice.total_value}}">
+                            </div>
+                            <div class="text-center my-1">
+                                <button class="btn btn-primary btn-sm my-2" onclick="paidInFull({{invoice.id}})">Paid in full</button>
+                                <button class="btn btn-success btn-sm my-2" onclick="updateAmountReceived({{invoice.id}})">Update</button>
+                                <button class="btn btn-danger btn-sm my-2" onclick="closePaymentWindow({{invoice.id}})">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="position:relative !important;" id="id_invoice_div{{invoice.id}}">
+                        <table class="ms-3 mt-2">
+                            <tbody>
+                                <tr>
+                                    <td>Total Value:</td>
+                                    <td>$ {{invoice.total_value}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Amount Received:</td>
+                                    <td>$ <span id="id_amount_received{{invoice.id}}">{{invoice.amount_received}}</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Balance Due:</td>
+                                    <td>$ <span id="id_balance_due{{invoice.id}}">{{invoice.balance_due}}</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Due Date:</td>
+                                    <td>{{invoice.due_date|date:"d M Y"}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Payment Status:</td>
+                                    <td>
+                                        <span id="id_payment_status{{invoice.id}}">
+                                            {% if invoice.payment_status %}
+                                            <button class="btn btn-sm btn-success px-3 my-1">Paid</button>
+                                            {% else %}
+                                            <button class="btn btn-warning btn-sm px-3 my-1" onclick="updatePaymentStatus({{invoice.id}})">
+                                                Outstanding
+                                            </button>
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% if invoice.title == "Quote" %}
+                                <tr>
+                                    <td>Quote Status</td>
+                                    <td>{% if invoice.quote_status.status == True %}<span class="text-success">Accepted</span>{% elif invoice.quote_status.status == False %}<span class="text-danger">Rejected</span> <a role="button" class="btn btn-sm btn-danger fs-8" onclick="resetQuote('{{invoice.public_link}}')">Reset</a>{% else %}<span class="text-secondary">Un-decided</span>{% endif%}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                        <div class="text-center">
+                            <a role="button" class="btn btn-sm btn-primary fs-8 my-2" href="{% url 'update_invoice' invoice.id 'customers_dashboard' %}">View/Edit</a>
+                            <a role="button" class="btn btn-sm btn-dark fs-8 my-2" onclick="invoiceDownloadURL({{invoice.id}})">Download</a>
+                            <a id="id_invoice_send_btn" role="button" class="btn btn-sm btn-success fs-8 my-2" onclick="invoiceEmailURL({{invoice.id}})">Send</a>
+                            <a role="button" class="btn btn-sm btn-info fs-8 my-2" onclick="invoiceHistoryFunc({{invoice.id}})" data-bs-toggle="modal" data-bs-target="#history_window">History</a>
+                            <a role="button" class="btn btn-sm btn-danger fs-8 my-2" onclick="invoiceDeleteFunc({{invoice.id}})">Delete</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer bg-dark page-header text-center">
+                <a role="button" class="btn btn-sm btn-primary m-1" href="{% url 'create_invoice' customer.id %}">Create New</a>
+                <a role="banner" class="btn btn-sm btn-secondary m-1" href="{%url 'viewcustomerinvoices' customer.id %}">View all Invoices</a>
+            </div>
+        </div>
+        <div id="id_notes" class="card shadow bg-light mb-2 mobilecard">
+            <div class="card-header bg-dark page-header">
+                <h4 class="card-title text-center m-auto">Customer Notes</h4>
+            </div>
+            <div class="card-body">
+                <div>
+                    <div class="form-group">
+                        <span for="id_start">Previous Notes:</span><br>
+                        <ul class="fs-8" id="noteslist" style="max-height: 20rem; overflow: auto;">
+                            {% for note in customer.notes.all %}
+                            <li>{{note}}</li>
+                            {% endfor %}
+                        </ul>
+                    </div><hr>
+                    <div class="form-group">
+                        <input name="customer_id" id="customer_id" class="d-none" value="{{customer.id}}">
+                        <textarea class="form-control" name="newNote" id="newnote" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-dark page-header text-center">
+                <a role="button" onclick="notesFeed()" class="btn btn-primary btn-sm m-1">Refresh</a>
+                <a role="button" onclick="addNote()" class="btn btn-success btn-sm m-1">Add Note</a>
+            </div>
+        </div>
+        <div id="id_attachments" class="card shadow bg-light mb-2 mobilecard">
+            <div style="position: absolute; width: 100%; height: 100%;" id="upload_spinner" class="backdrop index-4 modal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-header bg-dark page-header">
+                <h4 class="card-title text-center m-auto">Attachments</h4>
+            </div>
+            <div class="card-body" style="max-height: 630px; overflow: hidden;">
+                <div class="input-group mb-3 my-2">
+                    <input class="form-control form-control-sm" id="formFileSm" name="FILES" type="file" onchange="readURL(this)" multiple>
+                    <a class="btn btn-success btn-sm" type="button" id="id_upload_all" onclick="uploadAll()">Upload All</a>
+                </div>
+                <div style="max-height: 24rem; overflow: auto;">
+                    <table class="table fs-7 table-bordered text-center align-middle table-sm">
+                        <tbody id="attachment_table">
+                            {% for attachment in customer.attachments.all %}
+                            <tr id="attachment_row{{attachment.id}}">
+                                {% if "pdf" in attachment.file.url %}
+                                <td class="p-0"><a target="_blank" href="{{attachment.file.url}}"><embed width="50px" height="50px" name="plugin" src="{{attachment.file.url}}" type="application/pdf"></a></td>
+                                {% else %}
+                                <td class="p-0"><a target="_blank" href="{{attachment.file.url}}"><img src="{{attachment.file.url}}" alt="" class="rounded-3 mw-50px d-inline"></a></td>
+                                {% endif %}
+                                <td class="p-0 fs-8">
+                                    <a target="_blank" href="{{attachment.file.url}}" style="word-break: break-all;">{{attachment.filename}}</a><br>
+                                    {{attachment.date_created|date:"d M Y g:i A"}} {{attachment.filesize}} MB
+                                </td>
+                                <td><a class="btn btn-sm btn-danger" onclick="deleteAttachment({{attachment.id}})">Del</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-dark page-header text-center">
+                <a role="button" class="btn btn-sm btn-primary m-1" onclick="viewAll({{customer.id}})">View All</a>
+                <a role="button" class="btn btn-sm btn-secondary m-1" onclick="downloadAll({{customer.id}})">Download All</a>
+                <a role="button" class="btn btn-sm btn-success m-1" onclick="shareAttachments({{customer.id}})" title="Share Attachments with Customer">Share</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="id_confirmation_window" class="d-none modal backdrop" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmation Required</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="id_confirmation_window_cancel"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to Delete this Invoice?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="id_confirmation_window_confirm">Delete</button>
+                <button type="button" class="btn btn-success" data-dismiss="modal" id="id_confirmation_window_cancel1">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="id_loading_spinner" class="backdrop modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<div class="text-center m-4">
+    <button type="button" class="btn btn-dark" onclick="window.history.back();">Back</button>
+</div>
+
+<!-- Create Appointment -->
+<div id="eventModal" class="modal backdrop index-2" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto">Appointment</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close" onclick="appointmentWindow(false)"></button>
+            </div>
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group  mb-3">
+                    <label for="id_event_customer" class="col-form-label">Customers Name:</label>
+                    <input class="form-control" disabled type="text" value="{{customer}}">
+                    <input type="text" id="id_event_customer" name="event_customer" value="{{customer.id}}" class="d-none">
+                    <input type="text" id="id_event_id" name="event_id" class="d-none">
+                </div>
+                <div class="form-group">
+                    <label for="id_event_account" class="col-form-label">Attendee Name:</label>
+                    <select name="event_account" id="id_event_account" class="form-control">
+                        <option value="">---------</option>
+                        {% for account in accounts %}
+                        <option value="{{account.id}}">{{account.name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="message-text" class="col-form-label">Description:</label>
+                    <textarea name="description" cols="30" rows="2" class="form-control" placeholder="Enter event description" required="" id="id_description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="message-text" class="col-form-label">Start Date:</label>
+                    <input type="datetime-local" name="start" class="form-control" required="" id="id_start">
+                </div>
+                <div class="form-group">
+                    <label for="message-text" class="col-form-label">End Date:</label>
+                    <input type="datetime-local" name="end" class="form-control" required="" id="id_end">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button id="id_event_submit" class="btn btn-primary btn-sm" onclick="add_appointment()">Add</button>
+                <button id="id_event_update" class="btn btn-primary btn-sm" onclick="update_appointment()">Update</button>
+                <button id="id_event_submit_notify" class="btn btn-success btn-sm" onclick="add_appointment_notify()" title="This will Email the customer to notify them of the Appointment date and time.">Add & Notify</button>
+                <button id="id_event_update_notify" class="btn btn-success btn-sm" onclick="update_appointment_notify()" title="This will Email the customer to notify them of the Appointment date and time.">Update & Notify</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="appointmentWindow(false)">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice History -->
+<div class="modal fade" id="history_window" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered mw-800px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Invoice History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body table-responsive p-0">
+                <div style="position: absolute; width: 100%; height: 100%;" id="invoicehistory_loading_spinner" class="backdrop index-2" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <table class="table table-sm table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <td>Details</td>
+                            <td>Date</td>
+                            <td>Done By</td>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice_history_table">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary m-auto" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    const confWindow = document.getElementById('id_confirmation_window');
+    const confWindowConfirm = document.getElementById('id_confirmation_window_confirm');
+    const confWindowCancel = document.getElementById('id_confirmation_window_cancel');
+    const confWindowCancel1 = document.getElementById('id_confirmation_window_cancel1');
+
+    function customerDashboard(customerId){
+        window.location.href = ("/customer/customer_dashboard/" + customerId )
+    }
+    function editCustomer(customerId){
+        window.location.href = ("/customer/edit_customer/" + customerId )
+    }
+    function invoiceEditURL(invoiceId){
+        window.location.href = ("/invoicing/update_invoice/" + invoiceId + "/customers_dashboard")
+    }
+    function invoiceHistoryLoadingSpinner(status){
+        if (status){
+            $("#invoicehistory_loading_spinner").show()
+        }else{
+            $("#invoicehistory_loading_spinner").hide()
+        }
+    }
+    function invoiceHistoryFunc(invoiceId){
+        invoiceHistoryLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            inv_id: invoiceId,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'invoice_history' %}",
+            data: payload,
+            success: function(data){
+                if (data[data.length - 1].result == "success"){
+                    let table = document.getElementById('invoice_history_table')
+                    while (table.lastChild) {
+                        table.removeChild(table.lastChild);
+                    }
+                    for( i = 0; i < data.length - 1; i++){
+                        addHistoryRow(data[i])
+                    }
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', 'Something went wrong Please contact the system Admin.');
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                invoiceHistoryLoadingSpinner(false);
+            },
+        })
+    }
+    function addHistoryRow(data){
+        console.log(data)
+        let table = document.getElementById('invoice_history_table')
+
+        row = document.createElement("tr")
+
+        td1 = document.createElement("td")
+        td1.innerText = data.details
+
+        td2 = document.createElement("td")
+        td2.innerText = data.update_date
+
+        td3 = document.createElement("td")
+        td3.innerText = data.update_by
+
+        row.appendChild(td1)
+        row.appendChild(td2)
+        row.appendChild(td3)
+        table.appendChild(row)
+
+    }
+    function invoiceDeleteFunc(invoiceId){
+        confWindow.classList.remove('d-none');
+        confWindow.classList.add('d-block');
+        confWindowCancel.addEventListener('click',()=>{
+            confWindow.classList.add('d-none');
+        });
+        confWindowCancel1.addEventListener('click',()=>{
+            confWindow.classList.add('d-none');
+        });
+        confWindowConfirm.onclick = function(){
+            if(invoiceId){
+                invoiceData = {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    invoice_id: invoiceId,
+                },
+                $.ajax({
+                    type: 'POST',
+                    datatype: 'json',
+                    url: "{% url 'delete_invoice' %}",
+                    data: invoiceData,
+                    success: function(data){
+                        if(data.result == "success"){
+                            document.getElementById("id_invoice_div" + invoiceId).classList.add('d-none');
+                            showMessage('alert-success', "Invoice has been deleted successfully");
+                        }
+                        else if (data.result == "error"){
+                            showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                        }
+                    },
+                    error: function(data){
+                        showMessage('alert-error', "Please check your internet connection and try again!");
+                    },
+                    complete: function(data){
+                        confWindow.classList.add('d-none');
+                    },
+                })
+            }
+        }
+        
+    }
+    function invoiceDownloadURL(invoiceId){
+        window.open("/invoicing/download_invoice/" + invoiceId )
+    }
+    function invoiceEmailURL(invoiceId){
+        if(invoiceId){
+            displayLoadingSpinner(true)
+            invoiceData = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                inv_id: invoiceId,
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'send_invoice' %}",
+                data: invoiceData,
+                success: function(data){
+                    if(data.result == "success"){
+                        showMessage('alert-success', "Invoice has been Sent successfully");
+                        setTimeout(function(){window.location.reload()}, 6000);
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                    }
+                },
+                error: function(data){
+                    console.log(data.exception)
+                    showMessage('alert-error', "Please check your internet connection and try again!");
+                },
+                complete: function(){
+                    displayLoadingSpinner(false)
+                }
+            })
+        }
+    }
+    function closePaymentWindow(invID){
+        $( '#id_payment_update_window' + invID).hide();
+    }
+    function updatePaymentStatus(invID){
+        var paymentUpdateWindow = document.getElementById('id_payment_update_window' + invID);
+        var amountReceivedInputField = document.getElementById('id_amount_received_input' + invID);
+        amountReceivedInputField.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                updateAmountReceived(invID)
+            }
+        }, true);
+        // $( '#id_payment_update_window' + invID).show();
+        $( '#id_payment_update_window' + invID).animate({height: "toggle"},200);
+    }
+    function paidInFull(invID){
+        var amountReceivedInput = document.getElementById('id_amount_received_input' + invID);
+        var totalValueInput = document.getElementById('id_total_value_input' + invID);
+        displayLoadingSpinner(true)
+        invoiceData = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            invoice_id: invID,
+            amount_received: totalValueInput.value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'invoice_payment_update' %}",
+            data: invoiceData,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', "Invoice has been deleted successfully");
+                    closePaymentWindow(invID);
+                    document.getElementById('id_amount_received' + invID).innerText = totalValueInput.value;
+                    document.getElementById('id_balance_due' + invID).innerText = "0.00";
+                    document.getElementById('id_payment_status' + invID).innerHTML = '<button class="btn btn-sm btn-success px-4 my-1">Paid</button>';
+                    closePaymentWindow(invID);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                    closePaymentWindow(invID);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(data){
+                displayLoadingSpinner(false)
+            },
+        })
+    }
+    function updateAmountReceived(invID){
+        var amountReceivedInput = document.getElementById('id_amount_received_input' + invID);
+        var totalValueInput = document.getElementById('id_total_value_input' + invID);
+        displayLoadingSpinner(true)
+        invoiceData = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            invoice_id: invID,
+            amount_received: amountReceivedInput.value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'invoice_payment_update' %}",
+            data: invoiceData,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', "Invoice has been Updated successfully");
+                    closePaymentWindow(invID);
+                    document.getElementById('id_amount_received' + invID).innerText = data.amount_received;
+                    document.getElementById('id_balance_due' + invID).innerText = data.balance_due;
+                    document.getElementById('id_payment_status' + invID).innerHTML = data.payment_status;
+                    closePaymentWindow(invID);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                    closePaymentWindow(invID);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(data){
+                displayLoadingSpinner(false)
+            },
+        })
+
+    }
+    function deleteCustomer(cusID){
+        if(window.confirm("Are you sure you want to delete this Customer Account")){
+            displayLoadingSpinner(true)
+            invoiceData = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                cus_id: cusID,
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'delete_customer' %}",
+                data: invoiceData,
+                success: function(data){
+                    if(data.result == "success"){
+                        showMessage('alert-success', "Invoice has been Sent successfully");
+                        window.location.href = ("/customer/manage_customers/");
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error', "Please check your internet connection and try again!");
+                },
+                complete: function(){
+                }
+            })
+        }
+    }
+    function resetQuote(public_link){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            public_code: public_link,
+            status: 2,
+        };
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'public_ajax_quotestatus' %}",
+            data: payload,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', "Quote have been Reset");
+                    window.location.reload();
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                displayLoadingSpinner(false);
+            }
+        })
+    }
+
+    //Appointment Handler
+    function appointmentWindow(status, eventId){
+        if (status) {
+            $("#eventModal").animate({height:"toggle"}, 200);
+            if (eventId) {
+                $("#id_event_id")[0].value = eventId;
+                $("#id_event_account")[0].value = $("#event_account" + eventId)[0].value;
+                $("#id_description")[0].value = $("#event_description" + eventId)[0].innerText;
+                $("#id_start")[0].value = $("#event_start" + eventId)[0].value;
+                $("#id_end")[0].value = $("#event_end" + eventId)[0].value;
+                $("#id_event_update").show();
+                $("#id_event_update_notify").show();
+                $("#id_event_submit").hide();
+                $("#id_event_submit_notify").hide();
+            }else{
+                document.getElementById('id_description').value = "";
+                document.getElementById('id_start').value = "";
+                document.getElementById('id_end').value = "";
+                document.getElementById('id_event_account').value = "";
+                $("#id_event_update").hide();
+                $("#id_event_update_notify").hide();
+                $("#id_event_submit").show();
+                $("#id_event_submit_notify").show();
+            }
+        }else{
+            $("#eventModal").hide(200)
+        }
+    }
+    function add_appointment(){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            event_account: document.getElementById('id_event_account').value,
+            event_customer: document.getElementById('id_event_customer').value,
+            description: document.getElementById('id_description').value,
+            start: document.getElementById('id_start').value,
+            end: document.getElementById('id_end').value,
+        };
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'event_add' %}",
+            data: payload,
+            success: function(data){
+                if(data.result == "success"){
+                    $("#eventModal").hide(200)
+                    showMessage('alert-success', data.message);
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 3000)
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                displayLoadingSpinner(false);
+            }
+        })
+    }
+    function add_appointment_notify(){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            event_account: document.getElementById('id_event_account').value,
+            event_customer: document.getElementById('id_event_customer').value,
+            description: document.getElementById('id_description').value,
+            start: document.getElementById('id_start').value,
+            end: document.getElementById('id_end').value,
+            notify: "Yes",
+        };
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'event_add' %}",
+            data: payload,
+            success: function(data){
+                if(data.result == "success"){
+                    $("#eventModal").hide(200)
+                    showMessage('alert-success', data.message);
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 3000)
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                displayLoadingSpinner(false);
+            }
+        })
+    }
+    
+    function update_appointment(){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: document.getElementById('id_event_id').value,
+            event_account: document.getElementById('id_event_account').value,
+            event_customer: document.getElementById('id_event_customer').value,
+            description: document.getElementById('id_description').value,
+            start: document.getElementById('id_start').value,
+            end: document.getElementById('id_end').value,
+        };
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'event_update' %}",
+            data: payload,
+            success: function(data){
+                if(data.result == "success"){
+                    $("#eventModal").hide(200)
+                    showMessage('alert-success', data.message);
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 3000)
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                displayLoadingSpinner(false);
+            }
+        })
+    }
+    function update_appointment_notify(){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: document.getElementById('id_event_id').value,
+            event_account: document.getElementById('id_event_account').value,
+            event_customer: document.getElementById('id_event_customer').value,
+            description: document.getElementById('id_description').value,
+            start: document.getElementById('id_start').value,
+            end: document.getElementById('id_end').value,
+            notify: "Yes",
+        };
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'event_update' %}",
+            data: payload,
+            success: function(data){
+                if(data.result == "success"){
+                    $("#eventModal").hide(200)
+                    showMessage('alert-success', data.message);
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 3000)
+                    // window.location.reload();
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                displayLoadingSpinner(false);
+            }
+        })
+    }
+    
+    function sendOnApproach(eventId){
+        if (confirm("Please Press Ok To Confirm")) {
+            displayLoadingSpinner(true);
+            event_data = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                id: eventId,
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'onapproachsms' %}",
+                data: event_data,
+                success: function(data){
+                    if (data.result == "success"){
+                        $("#id_onapproachsms" + eventId)[0].classList.add("disabled");
+                        showMessage('alert-success', data.message);
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', data.message);
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error','Please check your internet and try again!');
+                },
+                complete: function(data){
+                    displayLoadingSpinner(false);
+                },
+            })
+        }
+    }
+    function jobCompleted(eventId){
+        displayLoadingSpinner(true);
+        event_data = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: eventId,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'ajax_jobcompleted' %}",
+            data: event_data,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#id_unlock" + eventId)[0].classList.remove("d-none");
+                    $("#id_completed" + eventId)[0].classList.add("disabled");
+                    showMessage('alert-success', "Job Marked as Completed");
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error','Something went wrong, please try again!');
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+            },
+        })
+    }
+    function unlockApp(eventId){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: eventId,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'ajax_unlockapp' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#id_unlock" + eventId)[0].classList.add("d-none");
+                    $("#id_completed" + eventId)[0].classList.remove("disabled");
+                    showMessage('alert-success', "Job has been Unlocked");
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error','Something went wrong, please try again!');
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+            },
+        })
+    }
+    function jobOnSite(eventId){
+        displayLoadingSpinner(true);
+        event_data = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: eventId,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'ajax_onsite' %}",
+            data: event_data,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#id_onsite" + eventId)[0].classList.add("d-none");
+                    $("#id_completed" + eventId)[0].classList.remove("d-none");
+                    showMessage('alert-success', "Job Marked as Started");
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error','Something went wrong, please try again!');
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+            },
+        })
+    }
+
+    function delete_appointment(eventId){
+        if(window.confirm("Are you sure you want to delete this Appointment?")){
+            displayLoadingSpinner(true);
+            event_data = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                id: eventId,
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'event_delete' %}",
+                data: event_data,
+                success: function(data){
+                    if (data.result == "success"){
+                        $("#container" + eventId).hide();
+                        showMessage('alert-success', "Deleted Successfully!");
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error','Something went wrong, please try again!')
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error','Please check your internet and try again!')
+                },
+                complete: function(data){
+                    displayLoadingSpinner(false);
+                },
+            })
+        }
+    }
+
+    //Customer Notes
+    function addNote(){
+        if ($("#newnote")[0].value){
+            displayLoadingSpinner(true);
+            payload = {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                id: $("#customer_id")[0].value,
+                note: $("#newnote")[0].value,
+            },
+            $.ajax({
+                type: 'POST',
+                datatype: 'json',
+                url: "{% url 'ajax_add_note' %}",
+                data: payload,
+                success: function(data){
+                    if (data.result == "success"){
+                        showMessage('alert-success', data.message);
+                        notesFeed();
+                        $("#newnote")[0].value = "";
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', data.message);
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error','Please check your internet and try again!');
+                },
+                complete: function(data){
+                    displayLoadingSpinner(false);
+                },
+            })
+        }
+    }
+    function notesFeed(){
+        displayLoadingSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: $("#customer_id")[0].value,
+            note: $("#newnote")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'customer_notes_feed' %}",
+            data: payload,
+            success: function(data){
+                if (data[data.length - 1].result == "success"){
+                    let ul = document.getElementById('noteslist')
+                    while (ul.lastChild) {
+                        ul.removeChild(ul.lastChild);
+                    }
+                    for( i = 0; i < data.length - 1; i++){
+                        if (data[i].note){
+                            let li = document.createElement('li');
+                            li.innerText = data[i].note;
+                            ul.appendChild(li)
+                        }
+                    }
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', 'Something went wrong Please contact the system Admin.');
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                displayLoadingSpinner(false);
+            },
+        })
+    }
+
+    // Attachments
+    let counter = 0;
+    function upload_spinner(status){
+        if (status){
+            $("#upload_spinner").show()
+        }else{
+            $("#upload_spinner").hide()
+        }
+    }
+    function readURL(input){
+        if(input.files && input.files[0]){
+            for (let i = 0; i < input.files.length; i++){
+                if (input.files[i].size < 50000000){
+                    var reader = new FileReader()
+                    reader.onload = function(e){
+                        var image = e.target.result
+                        let fileName = input.files[i].name
+                        addNewAttachment(image, fileName, counter)
+                        counter++;
+                    }
+                    reader.readAsDataURL(input.files[i])
+                }else{
+                    $("#formFileSm")[0].value = "";
+                    showMessage('alert-error',"File is Too Large")
+                }
+            }
+        }
+    }
+    function addNewAttachment(source, fileName, c){
+        let attachmentTable = document.getElementById("attachment_table")
+
+        let tr = document.createElement("tr");
+        tr.id = "attachment_row" + c;
+        let td1 = document.createElement("td");
+        td1.classList = "p-0";
+        let a1 = document.createElement("a");
+        // a1.target = "_blank";
+        a1.href = "#";
+        let img1 = document.createElement("img")
+        img1.src = source;
+        img1.id = "upload_img" + c;
+        img1.classList = "rounded-3 mw-50px d-inline";
+        a1.appendChild(img1);
+        td1.appendChild(a1);
+
+        let td2 = document.createElement("td");
+        td2.classList = "p-0 fs-8";
+        let a2 = document.createElement("a");
+        a2.href = "#";
+        a2.style.wordBreak = "break-all";
+        a2.innerText = fileName;
+        a2.id = "upload_filename" + c;
+        let div2 = document.createElement("div");
+        div2.classList = "progress mx-3";
+        let div21 = document.createElement("div");
+        div21.classList = "progress-bar progress-bar-striped progress-bar-animated";
+        div21.setAttribute("role","progressbar");
+        div21.id = "progressbar" + c;
+        div21.style.width = "0%";
+        div21.innerText = "0%";
+        div2.appendChild(div21);
+        td2.appendChild(a2);
+        td2.appendChild(div2);
+        
+        
+        let td3 = document.createElement("td");
+        td3.classList = "p-0 fs-8";
+        let a3 = document.createElement("a");
+        a3.classList = "btn btn-sm btn-success";
+        a3.setAttribute("onclick","uploadFiles("+ c +")");
+        a3.innerText = "Add";
+        a3.id = "upload_add_button" + c;
+        td3.appendChild(a3);
+
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        attachmentTable.appendChild(tr);
+    }
+    function uploadFiles(i){
+        image = $("#upload_img" + i)[0].src;
+        fileName = $("#upload_filename" + i)[0].innerText;
+        let payLoad = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            image: image,
+            filename: fileName,
+            cus_id: "{{customer.id}}",
+        }
+        $.ajax({
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        var percentComplete = evt.loaded / evt.total;
+                        percentComplete = parseInt(percentComplete * 100);
+                        $("#progressbar"+i)[0].style.width = percentComplete + "%";
+                        $("#progressbar"+i)[0].innerText = percentComplete + "%";
+
+                        if (percentComplete === 100) {
+                        }
+                    }
+                }, false);
+                return xhr;
+            },
+            type: "POST",
+            dataType: "json",
+            url: "{% url 'upload_customer_attachment' %}",
+            data: payLoad,
+            timeout: 120000,
+            success: function(data){
+                if(data.result == "success"){
+                    let attachmentTable = document.getElementById("attachment_table")
+                    let tr = document.getElementById("attachment_row" + i)
+                    while (tr.lastChild) {
+                        tr.removeChild(tr.lastChild);
+                    }
+                    let td1 = document.createElement("td");
+                    td1.classList = "p-0";
+                    let a1 = document.createElement("a");
+                    a1.target = "_blank";
+                    a1.href = data.attachmentURL;
+                    let img1 = document.createElement("img")
+                    img1.src = data.attachmentURL;
+                    img1.classList = "rounded-3 mw-50px d-inline";
+                    a1.appendChild(img1);
+                    td1.appendChild(a1);
+
+                    let td2 = document.createElement("td");
+                    td2.classList = "p-0 fs-8";
+                    let a2 = document.createElement("a");
+                    a2.target = "_blank";
+                    a2.href = data.attachmentURL;
+                    a2.style.wordBreak = "break-all";
+                    a2.innerText = data.attachmentFileName;
+                    let span2 = document.createElement("span")
+                    span2.innerHTML = "<br>" + data.attachmentDateSize;
+                    td2.appendChild(a2);
+                    td2.appendChild(span2);
+                    
+                    
+                    let td3 = document.createElement("td");
+                    td3.classList = "p-0 fs-8";
+                    let a3 = document.createElement("a");
+                    a3.classList = "btn btn-sm btn-danger";
+                    a3.setAttribute("onclick","deleteAttachment("+data.attachmentID+")");
+                    a3.innerText = "Del";
+                    td3.appendChild(a3);
+
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tr.appendChild(td3);
+                    attachmentTable.appendChild(tr);
+                    tr.id = "attachment_row" + data.attachmentID;
+                    $("#formFileSm")[0].value = ""
+
+                }
+                else if(data.result == "error"){
+                    showMessage('alert-error', data.message)
+                    // console.log("error")
+                    let tr = document.getElementById("attachment_row" + i)
+                    while (tr.lastChild) {
+                        tr.removeChild(tr.lastChild);
+                    }
+                }
+            },
+            error: function(data){
+                showMessage('alert-error',"File is Too Large")
+            },
+            complete: function(data){
+            }
+        })
+    }
+    function deleteAttachment(attachID){
+        upload_spinner(true)
+        invoiceData = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            attach_id: attachID,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'delete_cus_attachment' %}",
+            data: invoiceData,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', "Attachment Has been deleted");
+                    $("#attachment_row" + attachID)[0].remove();
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', "Something went wrong, please contact the system admin!");
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(){
+                upload_spinner(false);
+            }
+        })
+    }
+    function downloadAll(cusID){
+        window.location.href = "/customer/download_cus_attachments/" + cusID;
+    }
+    function viewAll(cusID){
+        window.location.href = ("/customer/viewall_cus_attachments/" + cusID)
+    }
+    function uploadAll(){
+        for (i=0; i<counter; i++){
+            if ($("#upload_add_button" + i)[0]){
+                $("#upload_add_button" + i)[0].click()
+            }
+        }
+    }
+    function shareAttachments(cusID){
+        upload_spinner(true);
+        invoiceData = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            id: cusID,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'share_attachments' %}",
+            data: invoiceData,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', "Attachments have been shared with customer through Email");
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(data){
+            },
+        })
+        upload_spinner(false);
+    }
+
+
+</script>
+{% endblock %}

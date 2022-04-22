@@ -1,0 +1,51 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+
+<div class="container p-0 mw-600px">
+    <div class="card mx-4 my-2 p-2 bg-light Regular shadow">
+        <div class="card-body p-2 py-0">
+            <div class="row m-0">
+                <div class="pe-0">
+                    Name: {{customer.name}}<br>
+                    Email: <a href="mailto:{{customer.email}}">{{customer.email}}</a><br>
+                    Number: <a href="tel:{{customer.number}}">{{customer.number}}</a><br>
+                    Address: <a target="_blank" href="http://maps.google.com/?q={{customer.address}}">{{customer.address}}</a><br>
+                    Number of appointments: {{customer.appointments.count}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for appointment in appointments %}
+<div class="container p-0 mw-600px">
+    <div class="card mx-4 my-2 p-2 bg-light Regular shadow">
+        <div class="card-body p-2 py-0">
+            <div class="row m-0">
+                <div class="pe-0">
+                    Attendee: {{appointment.event_account.name}}<br>
+                    Customer: {{appointment.event_customer}}<br>
+                    Description: {{appointment.description}}<br>
+                    Start: {{appointment.start|date:"D d-n-Y g:i A"}}<br>
+                    On Site Time: {{appointment.onsite_time|date:"D d-n-Y g:i A"}}<br>
+                    End: {{appointment.end|date:"D d-n-Y g:i A"}}<br>
+                    Completed Time:{{appointment.completed_time|date:"D d-n-Y g:i A"}}<br>
+                    On Approach SMS Sent: {%if appointment.onapproachsms%}Yes{%else%}No{%endif%}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="d-block text-center">
+    <button type="button" class="btn btn-secondary" onclick="window.history.back();">Back</button>
+</div>
+
+{% endblock %}

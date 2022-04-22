@@ -1,0 +1,142 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="Description" content="Zorex Business Management Software, Create and send Invoices, Scheduling appointments and Maintain Customer Database, Made for Aussie Businesses, Signup Today for a 30 Days Free Trial.">
+    <link rel="icon" href="{% static 'frontend/images/newlogo.svg' %}" type="image/x-icon">
+    <title id="main_title">{% block title %}Zorex{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'frontend/styles/bootstrap.css' %}">
+    <script src="{% static 'frontend/styles/jquery.js' %}"></script>
+    {% block css %}{% endblock %}
+</head>
+<body id="id_body">
+    <header id="id_header">
+        {% include 'frontend/navbar.html' %}
+    </header>
+    <main style="min-height: 75vh;">
+        
+        {% block main %}{% endblock %}
+    </main>
+    {% include 'frontend/messages.html' %}
+    {% include 'frontend/footer.html' %}
+    
+    <script src="{% static 'frontend/styles/bootstrap.bundle.js' %}"></script>
+    <script type="text/javascript">
+        let currentURL = window.location.href
+        {% if not request.user.is_authenticated %}
+        const navRegister = document.getElementById("nav_register")
+        const navHome = document.getElementById("nav_home")
+        const navLogin = document.getElementById("nav_login")
+        if( currentURL.includes("register") == true ){
+            navHome.classList.remove("active")
+            navRegister.classList.add("active")
+        }else if( currentURL.includes("login") == true ){
+            navHome.classList.remove("active")
+            navLogin.classList.add("active")
+        }
+        {% endif %}
+        {% if request.user.is_authenticated %}
+        const navHome = document.getElementById("nav_home")
+        const navLogin = document.getElementById("nav_login")
+        const navCustomers = document.getElementById("nav_customers")
+        const navAddCustomers = document.getElementById("nav_add_Customers")
+        const navCalendar = document.getElementById("nav_calendar")
+        const navProfile = document.getElementById("nav_profile")
+        const navAddAccount = document.getElementById("nav_add_account")
+        const navAddStaff = document.getElementById("nav_add_staff")
+        const navInvoicing = document.getElementById("nav_invoicing")
+        const navSubscription = document.getElementById("nav_manage_subscripton")
+        const navProducts = document.getElementById("nav_products")
+        const navSettings = document.getElementById("nav_account_settings")
+        const navHowTo = document.getElementById("nav_how_to")
+        const navPrivacyPolicy = document.getElementById("nav_privacy_policy")
+        const navTermsConditions = document.getElementById("nav_terms_conditions")
+        const navManageAccounts = document.getElementById("nav_manage_accounts")
+        const navContactUs = document.getElementById("nav_contact_us")
+        
+        if( currentURL.includes("manage_customers") == true ){
+            navHome.classList.remove("active")
+            navCustomers.classList.add("active")
+        }else if( currentURL.includes("settings") == true ){
+            navHome.classList.remove("active")
+            navSettings.classList.add("active")
+        }else if( currentURL.includes("customer_dashboard") == true ){
+            navHome.classList.remove("active")
+            navCustomers.classList.add("active")
+        }else if( currentURL.includes("subscription") == true ){
+            navHome.classList.remove("active")
+            navSubscription.classList.add("active")
+        }else if( currentURL.includes("add_Customers") == true ){
+            navHome.classList.remove("active")
+            navAddCustomers.classList.add("active")
+        }else if( currentURL.includes("add_account") == true ){
+            navHome.classList.remove("active")
+            navAddAccount.classList.add("active")
+        }else if( currentURL.includes("calendar") == true ){
+            navHome.classList.remove("active")
+            navCalendar.classList.add("active")
+        }else if( currentURL.includes("profile") == true ){
+            navHome.classList.remove("active")
+            navProfile.classList.add("active")
+        }else if( currentURL.includes("add_staff") == true ){
+            navHome.classList.remove("active")
+            navAddStaff.classList.add("active")
+        }else if( currentURL.includes("how_to") == true ){
+            navHome.classList.remove("active")
+            navHowTo.classList.add("active")
+        }else if( currentURL.includes("privacy_policy") == true ){
+            navHome.classList.remove("active")
+            navPrivacyPolicy.classList.add("active")
+        }else if( currentURL.includes("terms_conditions") == true ){
+            navHome.classList.remove("active")
+            navTermsConditions.classList.add("active")
+        }else if( currentURL.includes("manage_accounts") == true ){
+            navHome.classList.remove("active")
+            navManageAccounts.classList.add("active")
+        }else if( currentURL.includes("contact_us") == true ){
+            navHome.classList.remove("active")
+            navContactUs.classList.add("active")
+        }else if( currentURL.includes("invoicing") == true ){
+            if( currentURL.includes("products") == true ){
+                navHome.classList.remove("active")
+                navProducts.classList.add("active")
+            }else{
+                navHome.classList.remove("active")
+                navInvoicing.classList.add("active")
+            }
+        }
+
+        function displayLoadingSpinner(status){
+            if(status){
+                $("#id_loading_spinner").show();
+            }
+            else{
+                $("#id_loading_spinner").hide();
+            }
+        }
+
+        {% if request.user.is_admin %}
+        const navCronJob = document.getElementById("nav_cron_job")
+        if( currentURL.includes("crontab") == true ){
+            navHome.classList.remove("active")
+            navSettings.classList.remove("active")
+            navCronJob.classList.add("active")
+        }
+        {% endif %}
+
+        {%endif%}
+
+    </script>
+
+    {% if request.user.is_authenticated %}
+    {% include 'frontend/notification_handler.html' %}
+    {% endif %}
+
+    {% block script %}{% endblock %}
+    
+</body>
+</html>

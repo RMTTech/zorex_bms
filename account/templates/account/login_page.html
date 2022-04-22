@@ -1,0 +1,49 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+        
+{% if user.is_authenticated %}
+<div class="container mt-5">
+    <center>
+        <H2>You have already logged in as:<br> {{user.name}}</H2>
+    </center>
+</div>
+
+{% else %}
+
+<div class="container p-2 mt-4 mw-500px">
+    <form action="." method="POST">{% csrf_token %}
+        <div class="card">
+            <div class="card-header bg-dark page-header m-0">
+                <h2 class="text-center">Login</h2>
+            </div>
+            <div class="card-body">
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="80" required id="id_username">
+                    <label for="id_username">Email address</label>
+                </div>
+                <div class="form-floating">
+                    <input type="password" class="form-control" name="password" autocomplete="current-password" required id="id_password">
+                    <label for="id_password">Password:</label>
+                </div>
+                <div class="text-center"><a href="{% url 'password_reset' %}">Reset Your Password</a></div>
+                <script src='https://www.google.com/recaptcha/api.js'></script>
+                <div class="col-12 my-3">
+                    <div class="g-recaptcha" data-sitekey="{{google_site_key}}"></div>
+                </div>
+            </div>
+            <div class="card-footer bg-dark page-header">
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary col-6">Sign in</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{%endif%}
+
+{% endblock %}

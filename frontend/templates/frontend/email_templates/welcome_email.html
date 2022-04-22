@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="color-scheme" content="light dark">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Zorex BMS</title>
+	<style type="text/css">
+		:root {
+			Color-scheme: light dark;
+		}
+
+		@media (prefers-color-scheme: dark) {
+			img {
+				filter: brightness(.8) contrast(1.2);
+			}
+		}
+	</style>
+</head>
+	<body style="font-family: Tahoma, system-ui, 'Segoe UI', Geneva, Verdana, sans-serif; color: black;">
+		<div style="padding: 0px; position: relative; min-width: 0; max-width: 800px; word-wrap: break-word; background-color: #ffffff2d; background-clip: border-box; border: 1px solid; border-radius: 0.5em; margin: auto;">
+            <div style="padding: 0.5em 1em; margin-bottom: 0; background-color: #d6d6d681; border-bottom: 1px solid #000000; border-top-left-radius: 0.5em; border-top-right-radius: 0.5em;">
+                <div style="text-align: center; margin-top: 0.25em; margin-bottom: 0.25em; font-weight: bold; font-size: 28px;">
+					Zorex BMS
+				</div>
+			</div>
+			<div class="card-body" style="flex: 1 1 auto;"><br>
+				<div style="font-size: 16px; margin-bottom: 3em; margin-left: 0.5em; font-weight: bold;">Dear {{user.name}},</div>
+				<div style="font-size: 14px; margin-left: 1em;">
+					Welcome To Zorex, the Business Management Software<br><br>
+					Please click on the link below to confirm your identity and setup a password for your Account: {{user.username}}<br><br>
+
+					<a href="{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}">Click Here To
+					set a Password</a><br><br>
+
+					If clicking the link above doesn't work, please right click on the link then copy and paste the URL into a
+					new browser
+					window.<br>
+				</div>
+
+				<div
+					style="line-height: 100%; font-size: 14px; margin-left: 0.5em; margin-top: 3em; margin-bottom: 1.5em; font-weight: bold;">
+					Sincerely,<br><br>
+					Zorex Team
+				</div>
+
+				<hr>
+				<div style="font-size: 10px; margin-bottom: 3em; margin-left: 1.5em;">
+					Please disregard this Email if you aren't the intended person named at the top.
+				</div>
+				<div style="text-align: center; font-size: 12px;">
+					Powered By: Zorex BMS<br>
+					All rights reserved.<br>
+					<a href="{{protocol}}://{{domain}}/privacy_policy">Privacy Policy</a> | <a href="{{protocol}}://{{domain}}/terms_conditions">Terms & Conditions</a>
+				</div><br>
+			</div>
+		</div>
+	</body>
+
+</html>

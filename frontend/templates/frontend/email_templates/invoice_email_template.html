@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="color-scheme" content="light dark">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Zorex BMS</title>
+        <style type="text/css">
+            :root {
+                Color-scheme: light dark;
+            }
+            @media (prefers-color-scheme: dark) {
+                img {
+                    filter: brightness(.8) contrast(1.2);
+                }
+            }
+        </style>
+    </head>
+    <body style="font-family: Tahoma, system-ui, 'Segoe UI', Geneva, Verdana, sans-serif; color: black;">
+        <div style="padding: 0px; position: relative; min-width: 0; max-width: 800px; word-wrap: break-word; background-color: #ffffff2d; background-clip: border-box; border: 1px solid; border-radius: 0.5em; margin: auto;">
+            <div style="padding: 0.5em 1em; margin-bottom: 0; background-color: #d6d6d681; border-bottom: 1px solid #000000; border-top-left-radius: 0.5em; border-top-right-radius: 0.5em;">
+                <div style="text-align: center; margin-top: 0.25em; margin-bottom: 0.25em; font-weight: bold; font-size: 28px;">
+                    {{invoice.parent.business.name}}
+                </div>
+            </div>
+            <div style="flex: 1 1 auto; padding: 1em;">
+                <div style="font-size: 18px; margin-bottom: 3em; margin-left: 0.7em;">Dear {{invoice.customer}},</div>
+                <div style="width: 120px; height: 120px; text-align: center; display: block; margin: auto;">
+                    <img style="width: 120px; height: 120px; border-radius: 5px; display: block; margin: auto;" src="{{protocol}}://{{domain}}{{invoice.parent.business.logo.url}}">
+                </div>
+                <div style="text-align: center; font-size: 22px; font-weight: bold; margin-top: 3em; margin-bottom: 1em;">Total {{invoice.title}}<br>${{invoice.total_value}} AUD
+                </div><br>
+                {% if invoice.title == 'Quote' %}
+                <div style="text-align: center; font-size: 20px;">
+                    <a style="font-size: 20px; margin-bottom: 2em; display: inline-block; font-weight: 400; line-height: 1.5; color: #212529; text-align: center; text-decoration: none; vertical-align: middle; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; user-select: none; background-color: transparent; border: 1px solid transparent; padding: 0.375em 0.75em; font-size: 1em; border-radius: 0.25em; transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; color: #fff; background-color: #198754; border-color: #198754;"
+                        href="{{protocol}}://{{domain}}/invoicing/viewinvoice/{{invoice.public_link}}">Review & Accept
+                    </a>
+                </div><br>
+                <div style="font-size: 18px; margin-left: 1em;">
+                    Please see attached {{invoice.title}} {{invoice.invoice_no}} and get back to us at your earliest
+                    convenience.<br><br><br>
+                    {% if invoice.note %}
+                    Notes on {{invoice.title}}:<br>
+                    {{invoice.note}}
+                    {% endif %}
+                </div>
+
+                {% else %}
+
+                <div style="text-align: center; font-size: 20px;">
+                    <a style="font-size: 20px; margin-bottom: 3em; display: inline-block; font-weight: 400; line-height: 1.5; color: #212529; text-align: center; text-decoration: none; vertical-align: middle; cursor: pointer; -webkit-user-select: none; -moz-user-select: none; user-select: none; background-color: transparent; border: 1px solid transparent; padding: 0.375em 0.75em; font-size: 1em; border-radius: 0.25em; transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; color: #fff; background-color: #198754; border-color: #198754;"
+                        href="{{protocol}}://{{domain}}/invoicing/viewinvoice/{{invoice.public_link}}">
+                        {%if invoice.payment_status %}Invoice Paid{%else%}Review Invoice{%endif%}
+                    </a>
+                </div>
+                <div style="font-size: 18px; margin-left: 1em; font-weight: 400;">
+                    Please see attached {{invoice.title}} {{invoice.invoice_no}} and complete payment at your earliest
+                    convenience.<br><br><br><br>
+                    {% if invoice.note %}
+                    Notes on {{invoice.title}}:<br>
+                    {{invoice.note}}
+                    {% endif %}
+                </div>
+
+                {% endif %}
+
+                <div style="line-height: 100%; font-size: 16px; margin-left: 0.5em; margin-top: 4em; margin-bottom: 1.5em;">
+                    Kind Regards<br><br>
+                    {{invoice.sender.name}}<br>
+                    {% if invoice.sender.job_title %}{{invoice.sender.job_title}}<br>{% endif %}
+                    M: {{invoice.sender.number}}<br>
+                    E: {{invoice.sender.email}}<br><br>
+                </div>
+                <hr>
+
+                <div style="line-height: 110%; margin-left: 1em; font-size: 16px; margin-top: 1.5em; margin-bottom: 1.5em; text-align: center; font-weight: bold;">
+                    {{invoice.parent.business.name}}<br>
+                    {{invoice.parent.address}}<br>
+                    M: {{invoice.parent.number}}<br>
+                    E: {{invoice.parent.email}}<br>
+                    ABN/ACN {{invoice.parent.business.abn}}<br>
+                    {%if invoice.parent.business.license_number != ""%}
+                    License No {{invoice.parent.business.license_number}}<br>
+                    {%endif%}
+                </div>
+                {%if invoice.parent.conf.invoice_footer != "" %}
+                <hr>
+                <div style="font-size: 14px; padding-right: 1.5em; padding-left: 1.5em;">
+                    Invoice Terms & Conditions:<br>
+                    {{invoice.parent.conf.invoice_footer}}
+                </div>
+                {%endif%}
+                <hr>
+                <div style="font-size: 10px; margin-bottom: 3em; padding-right: 1.5em; padding-left: 1.5em;">
+                    Please disregard this Email if you aren't the intended person named at the top.
+                </div>
+
+                <div style="text-align: center; font-size: 14px;">Powered By: Zorex BMS<br>All
+                    rights reserved.<br>
+                    <a href="{{protocol}}://{{domain}}/privacy_policy">Privacy Policy</a> | <a
+                        href="{{protocol}}://{{domain}}/terms_conditions">Terms & Conditions</a>
+                </div>
+                <br>
+            </div>
+        </div>
+    </body>
+</html>

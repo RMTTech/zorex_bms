@@ -1,0 +1,403 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}
+<script type="module" src="{% static 'frontend/cropperjs/dist/cropper.js' %}"></script>
+<link rel="stylesheet" href="{% static 'frontend/cropperjs/dist/cropper.css' %}">
+{% endblock %}
+
+{% block main %}
+
+<div class="container p-0 mw-600px mt-3">
+    <div class="card m-2 p-2 bg-light Regular shadow">
+        <div class="card-body">
+            <form action="." method="POST" class="row g-3" enctype="multipart/form-data">{% csrf_token %}
+                <h2 class="text-center">Profile Update Form</h2>
+                <div class="spinner-border text-primary d-none m-auto" role="status" id="id_loading_spinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="container">
+                    <div class="mb-2 d-block px-0 position-relative">
+                        <div class="w-200px m-auto mb-1" id="id_cancel_confirm">
+                            <div id="id_confirm" class="float-end p-2">
+                                <svg role="button" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-check-lg text-success" viewBox="0 0 16 16">
+                                    <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                </svg>
+                            </div>
+                            <div id="id_cancel" class="p-2">
+                                <svg role="button" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-x-lg text-danger" viewBox="0 0 16 16">
+                                    <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <input type="file" class="d-none" name="profile_image" id="id_profile_image" onchange="readURL(this)">
+                        <div class="d-block position-relative">
+                            <div id="id_image_edit_container" class="d-block w-200px mx-auto overflow-hidden">
+                                <img class="rounded-4 mx-auto w-200px d-block shadow" id="id_profile_image_display" src="{{account.profile_img.url}}" alt="">
+                                <div id="id_edit_container">
+                                    <button type="button" id="id_edit" class="btn btn-primary">Edit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-block text-center">
+                    <button type="button" class="btn btn-danger btn-sm m-auto" onclick="deleteAccount()">Delete Account</button>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_first_name">First Name*</label>
+                    <input onblur="uppercase('id_first_name')" type="text" name="first_name" maxlength="30" class="form-control" id="id_first_name" required {% if account.first_name %}value="{{account.first_name}}"{% else %} placeholder="First Name" {% endif %}>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_last_name">Last Name*</label>
+                    <input onblur="uppercase('id_last_name')" type="text" name="last_name" maxlength="30" class="form-control" id="id_last_name" required {% if account.last_name %}value="{{account.last_name}}"{% else %} placeholder="Last Name" {% endif %}>
+                </div>
+                <div class="col-md-12">
+                    <label for="id_job_title" class="form-label">Job Title</label>
+                    <input type="text" name="job_title" class="form-control" id="id_job_title" {% if account.job_title %}value="{{account.job_title}}"{% else %} placeholder="Job Title" {% endif %}>
+                </div>
+                <div class="col-md-12">
+                    <label for="inputEmail4" class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" id="id_email" required readonly {% if account.email %}value="{{account.email}}"{% else %} placeholder="Email" {% endif %}>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_number">Mobile Number*</label>
+                    <input type="text" name="number" class="form-control" id="id_number" maxlength="16" pattern="[0-9 -]{10,}" required {% if account.number %} value="{{account.number}}"{% else %} placeholder="Mobile Number"{% endif %}>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_date_of_birth">Date Of Birth</label>
+                    <input type="date" name="date_of_birth" class="form-control" id="id_date_of_birth" required {% if account.date_of_birth %}value="{{account.date_of_birth|date:'Y-m-d'}}"{%else%}placeholder="YYYY-MM-DD"{% endif %}>
+                </div>
+                <div class="col-md-12">
+                    <label for="id_address">Address*</label>
+                    <input type="text" class="form-control" id="id_address" placeholder="Address" required {% if account.address %}value="{{account.address}}"{% endif %}>
+                    <div class="d-none">
+                        <input type="text" name="account_house_no" id="account_house_no" value="{{account.address.house_no}}">
+                        <input type="text" name="account_street" id="account_street" value="{{account.address.street}}">
+                        <input type="text" name="account_suburb" id="account_suburb" value="{{account.address.suburb}}">
+                        <input type="text" name="account_state" id="account_state" value="{{account.address.state}}">
+                        <input type="text" name="account_postcode" id="account_postcode" value="{{account.address.postcode}}">
+                        <input type="text" name="account_country" id="account_country" value="{{account.address.country}}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="id_color">Calendar Color</label>
+                    <input type="color" name="color" id="id_color" class="form-control" {% if account.color %} value="{{account.color}}"{% endif %} title="The color you choose here will highlight your allocated Appointments">
+                </div>
+                <hr class="my-3">
+                
+                <div class="text-center fs-4 my-0">Consents and Features</div>
+                {% if request.user.is_admin %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_is_staff" name="is_staff" {% if account.is_staff %}checked="True"{% endif %}>
+                    <label class="form-check-label" for="id_is_staff">
+                        Staff Account
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_is_admin" name="is_admin" {% if account.is_admin %}checked="True"{% endif %}>
+                    <label class="form-check-label" for="id_is_admin">
+                        Admin Account
+                    </label>
+                </div>
+                {% elif user.is_parent and user != account %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_staff_access" name="is_staff" {% if not user.is_parent %}disabled{% endif %} {% if account.is_staff %}checked="True"{% endif %}>
+                    <label class="form-check-label" for="id_staff_access">
+                        Staff Access <span class="fs-8">"Can see, edit and create Invoices and Appointments"</span>
+                    </label>
+                </div>
+                {%endif%}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_promotions" name="promotions" {% if account.promotions %}checked="True"{% endif %}>
+                    <label class="form-check-label" for="id_promotions">
+                        Promotions
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_privacy_policy" name="privacy_policy" required {% if account.privacy_policy %}checked="True"{% endif %}>
+                    <label class="form-check-label" for="id_privacy_policy">
+                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="id_terms_conditions" name="terms_conditions" required {% if account.terms_conditions %}checked="True"{% endif %}>
+                    <label class="form-check-label" for="id_terms_conditions">
+                        <a href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                    </label>
+                </div>
+                <div class="col-12">
+                    <div class="d-block text-center">
+                        <button type="submit" class="btn btn-primary btn-sm my-1">Update</button>
+                        <button type="button" class="btn btn-dark btn-sm my-1" onclick="window.history.back();">Back</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    enableImageOverlay()
+
+    function runUploader(){
+        document.getElementById("id_profile_image").click();
+    }
+
+
+	function displayLoadingSpinner(isDisplayed){
+		var spinner = document.getElementById("id_loading_spinner")
+		if(isDisplayed){
+			spinner.classList.remove("d-none")
+            spinner.classList.add("d-block")
+		}
+		else{
+			spinner.classList.remove("d-block")
+            spinner.classList.add("d-none")
+		}
+	}
+    let cropper;
+    let imageFile;
+    let base64ImageString;
+    let cropX;
+    let cropY;
+    let cropWidth;
+    let cropHeight;
+    let cropRotation;
+    function readURL(input){
+        if(input.files && input.files[0]){
+            var reader = new FileReader()
+            reader.onload = function(e){
+                disableImageOverlay()
+                var image = e.target.result
+                var imageField = document.getElementById("id_profile_image_display")
+                imageField.src = image
+                cropper = new Cropper(imageField, {
+                    aspectRatio: 1/1,
+                    viewMode: 2,
+                    crop(event){
+                        setImageCropProperties(
+                            image,
+                            event.detail.x,
+                            event.detail.y,
+                            event.detail.width,
+                            event.detail.height,
+                            event.detail.rotate,
+                        )
+                    }
+                })
+            }
+            reader.readAsDataURL(input.files[0])
+        }
+    }
+    function setImageCropProperties(image, x, y, width, height, rotate){
+        imageFile = image
+        cropX = x
+        cropY = y
+        cropWidth = width
+        cropHeight = height
+        cropRotation = rotate
+    }
+    function enableImageOverlay(){
+        let edit = document.getElementById("id_edit")
+        edit.style.cursor = "pointer"
+
+        let profileImage = document.getElementById("id_profile_image_display")
+        profileImage.style.opacity = "1"
+        profileImage.style.transition = ".5s ease"
+        profileImage.style.backfaceVisibility = "hidden"
+        profileImage.style.cursor = "pointer"
+
+        let editContainer = document.getElementById("id_edit_container")
+        editContainer.style.opacity = "0.3"
+        editContainer.style.position = "absolute"
+        editContainer.style.top = "60%"
+        editContainer.style.left = "50%"
+        editContainer.style.transform = "translate(-50%, 0%)"
+
+        let imageEditContainer = document.getElementById("id_image_edit_container")
+        imageEditContainer.addEventListener("mouseover", function(event){
+            profileImage.style.opacity = "0.5"
+            editContainer.style.opacity = "0.9"
+        })
+
+        imageEditContainer.addEventListener("mouseout", function(event){
+            profileImage.style.opacity = "1"
+            editContainer.style.opacity = "0.3"
+        })
+
+        imageEditContainer.addEventListener("click", function(event){
+            document.getElementById("id_profile_image").click()
+        })
+
+        let cropConfrim = document.getElementById("id_cancel_confirm")
+        cropConfrim.classList.add("d-none")
+
+        
+    }
+    function disableImageOverlay(){
+        let profileImage = document.getElementById("id_profile_image_display")
+        let edit = document.getElementById("id_edit")
+        let editContainer = document.getElementById("id_edit_container")
+        let imageEditContainer = document.getElementById("id_image_edit_container")
+
+        imageEditContainer.removeEventListener("mouseover", function(event){})
+        imageEditContainer.removeEventListener("mouseout", function(event){})
+        
+        profileImage.style.opacity = "1"
+        editContainer.style.opacity = "0"
+        edit.style.cursor = "default"
+        edit.style.opacity = "0"
+
+        imageEditContainer.removeEventListener("click", function(event){
+            event.preventDefault()
+        })
+
+        document.getElementById("id_profile_image").addEventListener("click", function(event){
+            event.preventDefault()
+        })
+        
+        let cropConfrim = document.getElementById("id_cancel_confirm")
+        cropConfrim.classList.remove("d-none")
+        cropConfrim.classList.add("d-block")
+
+        var confirm = document.getElementById("id_confirm")
+        confirm.addEventListener("click", function(event){
+            cropImage(imageFile, cropX, cropY, cropWidth, cropHeight, cropRotation)
+            
+        })
+
+        var cancel = document.getElementById("id_cancel")
+        cancel.addEventListener("click", function(event){
+            window.location.reload();
+        })
+    }
+    function cropImage(image, x, y, width, height, rotate){
+        var extStartIndex = image.indexOf("image/") + 6
+        var extEndIndex = image.indexOf(";base64")
+        var extString = image.substr(extStartIndex, extEndIndex - extStartIndex)
+        
+        var startIndex = image.indexOf("base64,") + 7
+        var base64str = image.substr(startIndex)
+        var decoded = atob(base64str);
+        var inkb = (decoded.length / 1000000).toFixed(2)
+		console.log("FileSize: " + inkb + " MB")
+        var requestData = {
+            "csrfmiddlewaretoken": "{{csrf_token}}",
+            "image": base64str,
+            "cropX": x,
+            "cropY": y,
+            "cropWidth": width,
+            "cropHeight": height,
+            "imageExt": extString,
+            "rotation": rotate,
+            "id": "{{account.id}}",
+        }
+        displayLoadingSpinner(true)
+        $.ajaxSetup({timeout:120000})
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "{% url 'crop_image' request.user.id %}",
+            data: requestData,
+            timeout: 120000,
+            success: function(data){
+                if(data.result == "success"){
+                    document.getElementById("id_cancel").click()
+                    
+                }
+                else if(data.result == "error"){
+                    document.getElementById("id_cancel").click()
+                }
+            },
+            error: function(data){
+                console.error('something went wrong')
+                console.log(data.result)
+                console.log(data.exception)
+                
+            },
+            complete: function(data){
+                displayLoadingSpinner(false)
+            }
+        })
+        
+
+    }
+    function deleteAccount(){
+        let confirmation = confirm("You are about to delete this account, press OK to confirm");
+        if(confirmation){
+            window.location.href="{% url 'delete_account' account.id %}";
+        }
+    }
+    function uppercase(inputID){
+        let str = $("#" + inputID)[0].value;
+        output = str.substring(0, 1).toUpperCase() + str.substring(1);
+        $("#" + inputID)[0].value = output;
+    }
+
+    function initMap() {
+        const componentForm = [
+            'location',
+        ];
+        const autocompleteInput = document.getElementById('id_address');
+        const autocomplete = new google.maps.places.Autocomplete(autocompleteInput, {
+            fields: ["address_components", "geometry", "name"],
+            types: ["address"],
+        });
+        autocomplete.setComponentRestrictions({
+            country: ["AU"],
+        });
+        autocomplete.addListener('place_changed', function () {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+                showMessage('alert-error','Please select an address from the dropdown list.')
+                // User entered the name of a Place that was not suggested and
+                // pressed the Enter key, or the Place Details request failed.
+                // window.alert('No details available for input: \'' + place.name + '\'');
+                return;
+            }
+            fillInAddress(place);
+        });
+
+        function fillInAddress(place) {  // optional parameter
+            const addressNameFormat = {
+                'street_number': 'long_name',
+                'route': 'short_name',
+                'locality': 'long_name',
+                'administrative_area_level_1': 'short_name',
+                'postal_code': 'short_name',
+                'country': 'long_name',
+            };
+            const getAddressComp = function (type) {
+                for (const component of place.address_components) {
+                    if (component.types[0] === type) {
+                        return component[addressNameFormat[type]];
+                    }
+                }
+            return '';
+            };
+            document.getElementById('id_address').value = getAddressComp('street_number') + ' ' + getAddressComp('route') + ' ' + getAddressComp('locality') + ' ' + getAddressComp('administrative_area_level_1') + ' ' + getAddressComp('postal_code') + ' ' + getAddressComp('country');
+            $("#account_house_no")[0].value = getAddressComp('street_number')
+            $("#account_street")[0].value = getAddressComp('route')
+            $("#account_suburb")[0].value = getAddressComp('locality')
+            $("#account_state")[0].value = getAddressComp('administrative_area_level_1')
+            $("#account_postcode")[0].value = getAddressComp('postal_code')
+            $("#account_country")[0].value = getAddressComp('country')
+            for (const component of componentForm) {
+                // Location field is handled separately above as it has different logic.
+                if (component !== 'location') {
+                    document.getElementById(component).value = getAddressComp(component);
+                }
+            }
+        }
+
+    }
+
+    
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYfuloZYC7wvMrfRxdmec2lRbwfSDZVP0&libraries=places&callback=initMap&solution_channel=GMP_QB_addressselection_v1_cA" async defer></script>
+
+{% endblock %}

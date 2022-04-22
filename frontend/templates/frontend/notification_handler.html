@@ -1,0 +1,189 @@
+{% load static %}
+
+<script type="text/javascript">
+
+    //Notificaiton Handler
+    function deleteNotification(notificationID) {
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            notification_id: notificationID,
+            action: 'DELETE'
+        }
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'notification_handler' %}",
+            data: payload,
+            success: function (data) {
+                if (data.result == 'success') {
+                    $("#notification_banner" + notificationID).hide(300);
+                    let badge1 = $("#notification_badge1")[0].innerText
+                    if ((parseInt(badge1 - 1)) > 0) {
+                        $("#notification_badge1")[0].innerText = parseInt(badge1 - 1);
+                        $("#notification_badge2")[0].innerText = parseInt(badge1 - 1);
+                    } else {
+                        $("#notification_badge1").hide();
+                        $("#notification_badge2").hide();
+                    }
+                }
+            },
+            error: function (data) {
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function (data) {
+
+            },
+        })
+    }
+    function changeTitle(){
+        if ($("#main_title")[0].innerText == "Zorex"){
+            $("#main_title")[0].innerText = "1 New Notification!";
+        }else{
+            $("#main_title")[0].innerText = "Zorex";
+        }
+    }
+    function notify() {
+        payload = {
+            id: "{{request.user.id}}",
+        }
+        $.ajax({
+            type: 'GET',
+            datatype: 'json',
+            url: "{% url 'notification_handler' %}",
+            data: payload,
+            success: function (data) {
+                console.log(data)
+                for(i=0;i<data.length;i++){
+                    let element =  document.getElementById("notification_banner" + data[i]['id']);
+                    let notificationWindow = document.getElementById("notification_window");
+                    if (notificationWindow != null){
+                        if (element == null){
+                            createNote(data[i])
+                        }
+                    }
+                }
+                if (data.length > 0){
+                    $("#notification_badge1").show()
+                    $("#notification_badge2").show()
+                }else{
+                    $("#notification_badge1").hide()
+                    $("#notification_badge2").hide()
+                }
+                if (parseInt($("#notification_badge1")[0].innerText) < data.length){
+                    let audio = new Audio("{% static 'frontend/Notification.mp3' %}");
+                    audio.play();
+                }
+                if (parseInt($("#notification_badge1")[0].innerText) != data.length){
+                    $("#notification_badge1")[0].innerText = data.length
+                    $("#notification_badge2")[0].innerText = data.length
+                }
+            },
+            error: function (data) {
+                window.location.reload()
+            },
+            complete: function (data) {
+            },
+        })
+
+    }
+    function createNote(note){
+        var titleChanger = setInterval(function(){changeTitle();}, 1500);
+        setTimeout(function(){clearInterval(titleChanger);}, 10000);
+
+        notificationWindow = document.getElementById("notification_window")
+
+        div1 = document.createElement("div")
+        div1.id = "notification_banner" + note.id
+        
+        div2 = document.createElement("div")
+        div2.setAttribute("role","alert");
+        if (note.code == "1"){
+            div2.classList = "alert d-flex align-item-center m-3 my-1 p-2 alert-dark"
+
+            div3 = document.createElement("div")
+            div3.classList = "list-unstyled-ul mx-2"
+            
+            a1 = document.createElement("a")
+            a1.href = "/customer/customer_dashboard/" + note.cus_id + "/"
+            a1.classList = "alert-link"
+            a1.innerText = note.cus_name
+
+            span = document.createElement("span")
+            span.innerText = " " + note.note
+
+            button1 = document.createElement("button")
+            button1.setAttribute("type","button")
+            button1.classList = "btn-close ms-auto"
+            button1.setAttribute("onclick","deleteNotification(" + note.id + ")")
+            button1.setAttribute("aria-label","close")
+            
+            div3.appendChild(a1)
+            div3.appendChild(span)
+            div2.appendChild(div3)
+            div2.appendChild(button1)
+            div1.appendChild(div2)
+            notificationWindow.appendChild(div1)
+        }
+        else if (note.code == "2"){
+            div2.classList = "alert d-flex align-item-center m-3 my-1 p-2 alert-danger"
+
+            div3 = document.createElement("div")
+            div3.classList = "list-unstyled-ul mx-2"
+            
+            a1 = document.createElement("a")
+            a1.href = "{% url 'subscription' %}"
+            a1.classList = "alert-link"
+            a1.innerText = note.note
+
+            button1 = document.createElement("button")
+            button1.setAttribute("type","button")
+            button1.classList = "btn-close ms-auto"
+            button1.setAttribute("onclick","deleteNotification(" + note.id + ")")
+            button1.setAttribute("aria-label","close")
+            
+            div3.appendChild(a1)
+            div2.appendChild(div3)
+            div2.appendChild(button1)
+            div1.appendChild(div2)
+            notificationWindow.appendChild(div1)
+        }
+        else if (note.code == "3"){
+            div2.classList = "alert d-flex align-item-center m-3 my-1 p-2 alert-info"
+
+            div3 = document.createElement("div")
+            div3.classList = "list-unstyled-ul mx-2"
+            
+            a1 = document.createElement("a")
+            a1.href = "/account/" + note.account_id + "/profile_page/"
+            a1.classList = "alert-link"
+            a1.innerText = note.note
+
+            button1 = document.createElement("button")
+            button1.setAttribute("type","button")
+            button1.classList = "btn-close ms-auto"
+            button1.setAttribute("onclick","deleteNotification(" + note.id + ")")
+            button1.setAttribute("aria-label","close")
+            
+            div3.appendChild(a1)
+            div2.appendChild(div3)
+            div2.appendChild(button1)
+            div1.appendChild(div2)
+            notificationWindow.appendChild(div1)
+        }
+    }
+    notifyCounter = 0;
+    let notifyInterval = setInterval(function(){
+        notify();
+        if (++notifyCounter === 3) {
+            window.clearInterval(notifyInterval);
+        }
+    },20000);
+
+    //Initiate ToolTip
+    function activateToolTip() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    }
+</script>

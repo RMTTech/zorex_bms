@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+
+<url>
+  <loc>https://zorex.com.au/</loc>
+  <lastmod>2022-03-09T03:19:05+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://zorex.com.au/contact_us/</loc>
+  <lastmod>2022-03-30T03:19:05+00:00</lastmod>
+  <priority>0.90</priority>
+</url>
+<url>
+  <loc>https://zorex.com.au/account/login/</loc>
+  <lastmod>2022-03-09T03:19:05+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://zorex.com.au/account/register/</loc>
+  <lastmod>2022-03-09T03:19:05+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://zorex.com.au/account/password_reset/</loc>
+  <lastmod>2022-03-09T03:19:05+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+
+
+</urlset>

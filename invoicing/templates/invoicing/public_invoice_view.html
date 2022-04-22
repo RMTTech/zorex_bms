@@ -1,0 +1,644 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+{% if not request.user.is_authenticated %}
+{% if invoice.title == "Quote" %}
+{% if invoice.quote_status == "" or invoice.quote_status.status == None %}
+<div class="text-center m-3">
+    <button class="btn btn-success" onclick="showquoteconfirmation()">Accept Quote</button>
+    <button class="btn btn-danger" onclick="quotedecline(true)">Decline Quote</button>
+</div>
+{% endif %}
+{% if invoice.quote_status.status == True %}
+<h1 class="text-center">Quote has been Accepted</h1>
+{% endif %}
+{% if invoice.quote_status.status == False %}
+<h1 class="danger text-center">Quote has been Rejected</h1>
+{% endif %}
+{% endif %}
+{% endif %}
+
+<form action="." method="POST"  enctype="multipart/form-data">{% csrf_token %}
+    <div id="id_displayed_area" class="container mw-1400px mt-2">
+        <div class="d-flex justify-content-center flex-wrap">
+
+            <div id="id_account_details" class="card shadow bg-light m-2 mobilecard">
+                <div class="card-body">
+                    <h4 class="text-center">Business Details</h4><hr>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Name:</td>
+                                <td>{{invoice.parent.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>Business:</td>
+                                <td>{{invoice.parent.business.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>ABN:</td>
+                                <td>{{invoice.parent.business.abn}}</td>
+                            </tr>
+                            <tr>
+                                <td>GST Registered:</td>
+                                <td>{{invoice.parent.business.gst_registered}}</td>
+                            </tr>
+                            <tr>
+                                <td>Logo:</td>
+                                <td class="text-center"><img style="width: 50px;" src="{{invoice.parent.business.logo.url}}"></td>
+                            </tr>
+                            {% if invoice.payment_method == "BANK_TRANSFER" %}
+                            <tr>
+                                <td>BSB:</td>
+                                <td>{{invoice.parent.business.bsb}}</td>
+                            </tr>
+                            <tr>
+                                <td>Account No:</td>
+                                <td>{{invoice.parent.business.account_number}}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <div id="id_customer_details" class="card shadow bg-light m-2 mobilecard">
+                <div class="card-body">
+                    <h4 class="text-center">Customer Details</h4><hr>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Name:</td>
+                                <td>{{invoice.customer.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>Email:</td>
+                                <td>{{invoice.customer.email}}</td>
+                            </tr>
+                            <tr>
+                                <td>Number:</td>
+                                <td>{{invoice.customer.number}}</td>
+                            </tr>
+                            <tr>
+                                <td>Address:</td>
+                                <td>{{invoice.customer.address}}</td>
+                            </tr>
+                            <tr>
+                                <td>Business:</td>
+                                <td>{% if invoice.customer.business_name %}{{invoice.customer.business_name}}{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td>ABN/ACN:</td>
+                                <td>{% if invoice.customer.business_abn %}{{invoice.customer.business_abn}}{% endif %}</td>
+                            </tr>
+                        </tbody>
+                    </table><hr>
+                    <h5 class="text-center">Note on invoice</h5>
+                    <textarea name="note" id="id_invoice_note" class="form-control minh-100px" disabled>{{invoice.note}}</textarea>
+                </div>
+            </div>
+            
+
+            <div id="id_quotes_and_invoices" class="card shadow bg-light m-2 mobilecard">
+                <div class="card-body">
+                    <h4 class="text-center">{% if invoice.title == "Quote" %} Quote {% else %} Invoice {% endif %}Details</h4><hr>
+                    <div class="mb-2">
+                        <label for="id_title">Title:</label>
+                        <select name="title" id="id_title" class="form-control" aria-label="Select" required  disabled>
+                            <option value="">------</option>
+                            <option value="Quote" {% if invoice.title == "Quote" %}selected{% endif %}>Quote {{invoice.invoice_no}}</option>
+                            <option value="Invoice" {% if invoice.title == "Invoice" %}selected{% endif %}>Invoice {{invoice.invoice_no}}</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="id_invoice_date">Date:</label>
+                        <input disabled class="form-control" type="date" name="invoice_date" id="id_invoice_date" required {% if invoice.invoice_date %}value="{{invoice.invoice_date|date:"Y-m-d"}}"{% endif %}>
+                    </div>
+                    <div class="mb-2">
+                        <label for="id_due_date">Due Date:</label>
+                        <input disabled class="form-control" type="date" name="due_date" id="id_due_date" required {% if invoice.due_date %}value="{{invoice.due_date|date:"Y-m-d"}}"{% endif %}>
+                    </div>
+                    <div class="mb-2">
+                        <label for="id_payment_method">Payment Method:</label>
+                        <select disabled class="form-control" name="payment_method" id="id_payment_method" aria-label="Select" required>
+                            <option value="">------</option>
+                            <option value="BANK_TRANSFER" {% if invoice.payment_method == "BANK_TRANSFER" %}selected{% endif %}>Bank Transfer</option>
+                            <option value="CASH" {% if invoice.payment_method == "CASH" %}selected{% endif %}>Cash</option>
+                            <option value="CASH_ON_DELIVERY" {% if invoice.payment_method == "CASH_ON_DELIVERY" %}selected{% endif %}>Cash On Delivery</option>
+                            <option value="EFTPOS" {% if invoice.payment_method == "EFTPOS" %}selected{% endif %}>EFTPOS</option>
+                            <option value="PAYPAL" {% if invoice.payment_method == "PAYPAL" %}selected{% endif %}>PAYPAL</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-auto">
+                <div class="container mw-1200px mt-2">
+                    <div class="card shadow bg-light table-responsive">
+                        <table id="id_products_table" class="table fs-7 table-bordered">
+                            <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col" style="min-width: 180px; width: 180px;">Product/Service</th>
+                                <th scope="col" style="min-width: 250px; width: 250px;">Description</th>
+                                <th scope="col" style="min-width: 70px; width: 75px;">QTY</th>
+                                <th scope="col" style="min-width: 100px; width: 110px;">Price</th>
+                                <th scope="col" style="min-width: 120px; width: 130px;">Sub Total</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                                {% if invoice.products %}
+                                {% for product in invoice.products.all %}
+                                <tr class="v-align-middle">
+                                    <td><input disabled class="d-none" type="text" name="product_id{{forloop.counter}}" id="id_product_id{{forloop.counter}}" value="{{product.id}}">{{forloop.counter}}</td>
+                                    <td><input disabled class="form-control" type="text" name="product_title{{forloop.counter}}" id="id_product_title{{forloop.counter}}" value="{{product.product_title}}"></td>
+                                    <td><input disabled class="form-control" type="text" name="product_description{{forloop.counter}}" id="id_product_description{{forloop.counter}}" value="{{product.product_description}}"></td>
+                                    <td><input disabled class="form-control" type="text" name="quantity{{forloop.counter}}" id="id_quantity{{forloop.counter}}" onblur="Total({{forloop.counter}})" value="{{product.quantity}}"></td>
+                                    <td><input disabled class="form-control" type="text" name="price{{forloop.counter}}" id="id_price{{forloop.counter}}" onblur="Total({{forloop.counter}})" value="{{product.price}}"></td>
+                                    <td><input disabled class="form-control" type="text" name="product_total{{forloop.counter}}" id="id_product_total{{forloop.counter}}" onchange="$(this).val(parseFloat($(this).val()).toFixed(2))" onblur="Total({{forloop.counter}})" value="{{product.total}}"></td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                                <tr>
+                                    <td class="no-border"></td>
+                                    <td class="no-border"></td>
+                                    <td class="no-border"></td>
+                                    <td class="no-border"></td>
+                                    <td class="text-center">Sub Total:</td>
+                                    <td class="text-center">$ <span id="id_sub_total"></span><input class="d-none" name="sub_total" id="id_sub_total_input"></td>
+                                    
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td class="no-border"></td>
+                                    <td class="no-border">Amount Received:</td>
+                                    <td class="no-border"><input disabled class="form-control" name="amount_received" id="id_amount_received" onblur="updateTotalValue()" onchange="if($(this).val() !== ''){$(this).val(parseFloat($(this).val()).toFixed(2))}" value="{{invoice.amount_received}}"></td>
+                                    <td class="no-border"></td>
+                                    <td class="text-center">GST:</td>
+                                    <td class="text-center">$ <span id="id_total_gst"></span><input class="d-none" name="total_gst" id="id_total_gst_input"></td>
+                                    
+                                </tr>
+                                <tr>
+                                    <td class="no-border"></td>
+                                    <td class="no-border">Balance Due:</td>
+                                    <td class="no-border">$ <span id="id_balance_due"></span><input class="d-none" name="balance_due" id="id_balance_due_input"></td>
+                                    <td class="no-border"></td>
+                                    <td class="text-center">Total:</td>
+                                    <td class="text-center">$ <span id="id_total_value"></span><input class="d-none" name="total_value" id="id_total_value_input"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% if invoice.show_attachments %}
+            <div id="id_attachments" class="card shadow bg-light m-2 mobilecard">
+                <div class="card-body" style="max-height: 630px; overflow: hidden;">
+                    <h4 class="text-center">Attachments</h4>
+                    <hr>
+                    
+                    <div style="max-height: 400px; overflow: auto;">
+                        <div class="text-center m-2" id="attachments_container">
+                        </div>
+                        <table class="table fs-7 table-bordered text-center align-middle table-sm">
+                            <tbody>
+                                {% for attachment in invoice.attachments.all %}
+                                <tr id="attachment_row{{attachment.id}}">
+                                    {% if "pdf" in attachment.filename %}
+                                    <td class="p-0"><a target="_blank" href="{{attachment.file.url}}"><embed width="50px" height="50px" name="plugin" src="{{attachment.file.url}}" type="application/pdf"></a></td>
+                                    {% else %}
+                                    <td class="p-0"><a target="_blank" href="{{attachment.file.url}}"><img src="{{attachment.file.url}}" alt="" class="rounded-3 mw-50px d-inline"></a></td>
+                                    {% endif %}
+                                    <td class="p-0 fs-8">
+                                        <a target="_blank" href="{{attachment.file.url}}" style="word-break: break-all;">{{attachment.filename}}</a><br>
+                                        {{attachment.date_created|date:"d M Y g:i A"}} {{attachment.filesize}} MB
+                                        
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-block">
+                        <div class="text-center mt-3">
+                            <a role="button" class="btn btn-sm btn-primary" onclick="viewAll()">View All</a>
+                            <a role="button" class="btn btn-sm btn-secondary" onclick="downloadAll({{invoice.id}})">Download All</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+<div id="confirmation_window" class="modal backdrop index-2">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto" id="id_modal_title">Quote Confirmation Window</h5>
+                <button class="btn btn-danger p-x" onclick="hidequoteconfirmation()">
+                    <span class="fs-4">&times;</span>
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <div class="col-md-12">
+                    Are you Sure you want to Accept {{invoice.title}} {{invoice.invoice_no}} with a Total of ${{invoice.total_value}} ?
+                </div>
+                <div class="col-12 text-center m-2">
+                    <button role="button" type="submit" class="btn btn-sm btn-primary" onclick="acceptQuote('{{invoice.public_link}}')">Accept Quote</button> 
+                    <a role="button" type="button" class="btn btn-sm btn-danger" onclick="hidequoteconfirmation()">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="decline_window" class="modal backdrop index-2">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto" id="id_modal_title">Quote Confirmation Window</h5>
+                <button class="btn btn-danger p-x" onclick="quotedecline(false)">
+                    <span class="fs-4">&times;</span>
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <div class="col-md-12">
+                    Are you Sure you want to Decline {{invoice.title}} {{invoice.invoice_no}}?
+                </div>
+                <div class="col-12 text-center m-2">
+                    <button role="button" type="submit" class="btn btn-sm btn-warning" onclick="declineQuote('{{invoice.public_link}}')">Decline Quote</button> 
+                    <a role="button" type="button" class="btn btn-sm btn-danger" onclick="quotedecline(false)">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="status_window" class="modal backdrop index-2">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto">Quote Status</h5>
+                <button class="btn btn-danger p-x" onclick="statusWindow(false)">
+                    <span class="fs-4">&times;</span>
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <div class="col-md-12 text-center">
+                    {{invoice.title}} {{invoice.invoice_no}} has been Accepted.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="id_loading_spinner" class="backdrop modal index-3" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="text-center position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+<br>
+{% if not request.user.is_authenticated %}
+{% if invoice.title == "Quote" %}
+{% if invoice.quote_status == "" or invoice.quote_status.status == None %}
+<div class="text-center m-3">
+    <button class="btn btn-success" onclick="showquoteconfirmation()">Accept Quote</button>
+    <button class="btn btn-danger" onclick="quotedecline(true)">Decline Quote</button>
+</div>
+{% endif %}
+{% if invoice.quote_status.status == True %}
+<h1 class="text-center">Quote has been Accepted</h1>
+{% endif %}
+{% if invoice.quote_status.status == False %}
+<h1 class="danger text-center">Quote has been Rejected</h1>
+{% endif %}
+{% endif %}
+{% endif %}
+<script type="text/javascript">
+
+const productsTable = document.getElementById('id_products_table');
+function addRow() {
+    var rowCount = productsTable.rows.length - 3;
+    var row = productsTable.insertRow(rowCount);
+    row.classList = "v-align-middle";
+    var cell1 = row.insertCell(0);
+    var cell2 = row.insertCell(1);
+    var cell3 = row.insertCell(2);
+    var cell4 = row.insertCell(3);
+    var cell5 = row.insertCell(4);
+    var cell7 = row.insertCell(5);
+    cell1.innerHTML = rowCount;
+
+    var element1 = document.createElement("input");
+    element1.classList = "d-none";
+    element1.type = "text";
+    element1.name = "product_id" + rowCount;
+    element1.id = "id_product_id" + rowCount;
+    // element1.value = rowCount;
+    cell1.appendChild(element1);
+
+    var element2 = document.createElement("input");
+    element2.classList = "form-control";
+    element2.type = "text";
+    element2.name = "product_title" + rowCount;
+    element2.id = "id_product_title" + rowCount;
+    element2.setAttribute('onfocus','productlist_searchbar('+ rowCount +')');
+    element2.setAttribute('onkeyup','productlist_search_products('+ rowCount +')');
+    element2.setAttribute('onblur','productlist_search_list_blur('+ rowCount +')');
+    cell2.appendChild(element2);
+
+    var element21 = document.createElement("div");
+    element21.classList = "d-inline-block position-absolute mh-200px overflow-auto rounded";
+    
+
+    var element22 = document.createElement("ul");
+    element22.classList = "list-group d-none";
+    element22.id = "productlist_search_list" + rowCount;
+    
+
+    {% for productlist in productlists %}
+    var element23 = document.createElement("li");
+    element23.classList = "productlists list-group-item btn-primary index-2";
+    element23.setAttribute('role','button')
+    element23.setAttribute('onclick',"productlist_option_selected('{{productlist.id}}','{{productlist.product_title}}','{{productlist.product_description}}','{{productlist.price}}','"+rowCount+"')");
+    element23.innerText = "{{productlist.product_title}}";
+    element22.appendChild(element23);
+    {% endfor %}
+    element21.appendChild(element22);
+    cell2.appendChild(element21);
+
+    var element3 = document.createElement("input");
+    element3.classList = "form-control";
+    element3.type = "text";
+    element3.name = "product_description" + rowCount;
+    element3.id = "id_product_description" + rowCount;
+    cell3.appendChild(element3);
+
+    var element4 = document.createElement("input");
+    element4.classList = "form-control";
+    element4.type = "text";
+    element4.name = "quantity" + rowCount;
+    element4.id = "id_quantity" + rowCount;
+    att41 = document.createAttribute("onblur");
+    att41.value = "Total(" + rowCount + ")";
+    element4.setAttributeNode(att41);
+    cell4.appendChild(element4);
+
+    var element5 = document.createElement("input");
+    element5.classList = "form-control";
+    element5.type = "text";
+    element5.name = "price" + rowCount;
+    element5.id = "id_price" + rowCount;
+    att51 = document.createAttribute("onblur");
+    att51.value = "Total(" + rowCount + ")";
+    element5.setAttributeNode(att51);
+    cell5.appendChild(element5);
+
+    var element7 = document.createElement("input");
+    element7.classList = "form-control";
+    element7.type = "text";
+    element7.name = "product_total" + rowCount;
+    element7.id = "id_product_total" + rowCount;
+    att7 = document.createAttribute("onchange");
+    att7.value = "$(this).val(parseFloat($(this).val()).toFixed(2))";
+    element7.setAttributeNode(att7);
+    att71 = document.createAttribute("onblur");
+    att71.value = "Total(" + rowCount + ")";
+    element7.setAttributeNode(att71);
+    cell7.appendChild(element7);
+
+}
+
+resizableGrid(productsTable)
+function resizableGrid(table) {
+    var row = table.getElementsByTagName('tr')[0],
+    cols = row ? row.children : undefined;
+    if (!cols) return;
+    for (var i=0;i<cols.length;i++){
+        var div = createDiv(table.offsetHeight);
+        cols[i].appendChild(div);
+        cols[i].style.position = 'relative';
+        setListeners(div);
+    }
+}
+function createDiv(height){
+    var div = document.createElement('div');
+    div.style.top = 0;
+    div.style.right = 0;
+    div.style.width = '5px';
+    div.style.position = 'absolute';
+    div.style.cursor = 'col-resize';
+    /* remove backGroundColor later */
+    // div.style.backgroundColor = 'red';
+    div.style.userSelect = 'none';
+    /* table height */
+    div.style.height = height+'px';
+    return div;
+}
+function setListeners(div){
+    var pageX,curCol,nxtCol,curColWidth,nxtColWidth;
+    div.addEventListener('mousedown', function (e) {
+        curCol = e.target.parentElement;
+        nxtCol = curCol.nextElementSibling;
+        pageX = e.pageX;
+        curColWidth = curCol.offsetWidth
+        if (nxtCol)
+            nxtColWidth = nxtCol.offsetWidth
+    });
+
+    document.addEventListener('mousemove', function (e) {
+    if (curCol) {
+        var diffX = e.pageX - pageX;
+
+        if (nxtCol)
+            nxtCol.style.width = (nxtColWidth - (diffX))+'px';
+
+        curCol.style.width = (curColWidth + diffX)+'px';
+        }
+    });
+
+    document.addEventListener('mouseup', function (e) { 
+        curCol = undefined;
+        nxtCol = undefined;
+        pageX = undefined;
+        nxtColWidth = undefined;
+        curColWidth = undefined;
+    });
+}
+function Total(rowNumber){
+    var qtyInput = document.getElementById("id_quantity" + rowNumber);
+    var priceInput = document.getElementById("id_price" + rowNumber);
+    var rowtotalInput = document.getElementById("id_product_total" + rowNumber);
+    if(priceInput.value !== ""){
+        priceInput.value = parseFloat(priceInput.value).toFixed(2);
+    }
+    else{
+        priceInput.value = "";
+    }
+    if(qtyInput.value !== '' && priceInput.value !== ''){
+        rowtotalInput.value = parseFloat(parseFloat(priceInput.value) * parseFloat(qtyInput.value)).toFixed(2);
+    }
+    else{
+    rowtotalInput.value = '';
+    }
+    updateTotalValue();
+    
+}
+function updateTotalValue(){
+    var subTotal = document.getElementById("id_sub_total");
+    var totalValue = document.getElementById("id_total_value");
+    var totalGST = document.getElementById("id_total_gst");
+    var addingUp = parseFloat(0)
+    var rowCount = productsTable.rows.length;
+    for(i=1; i < (rowCount-3); i++){
+        var rowTotal = document.getElementById("id_product_total" + i );
+        if(parseFloat(rowTotal.value)){
+            addingUp = addingUp + parseFloat(rowTotal.value);
+        }
+    }
+    subTotal.innerText = parseFloat(addingUp).toFixed(2);
+    var gstStatus = "{{invoice.parent.business.gst_registered}}";
+    if(gstStatus == "True"){
+        totalGST.innerText = parseFloat(addingUp * 0.10).toFixed(2);
+        totalValue.innerText = parseFloat(parseFloat(subTotal.innerText) + parseFloat(totalGST.innerText)).toFixed(2);
+        document.getElementById("id_sub_total_input").value = subTotal.innerText;
+        document.getElementById("id_total_gst_input").value = totalGST.innerText;
+        document.getElementById("id_total_value_input").value = totalValue.innerText;
+        var amountReceived = document.getElementById("id_amount_received").value;
+        var balanceDue = document.getElementById("id_balance_due")
+        var balanceDueInput = document.getElementById("id_balance_due_input")
+        if(amountReceived){
+            var outstanding = parseFloat(parseFloat(totalValue.innerText) - parseFloat(amountReceived)).toFixed(2);
+            balanceDue.innerText = outstanding;
+            balanceDueInput.value = outstanding;
+        }else{
+            balanceDue.innerText = totalValue.innerText;
+            balanceDueInput.value = parseFloat(0).toFixed(2);
+        }
+    }else{
+        totalGST.innerText = parseFloat(0).toFixed(2);
+        totalValue.innerText = parseFloat(subTotal.innerText).toFixed(2);
+        document.getElementById("id_sub_total_input").value = subTotal.innerText;
+        document.getElementById("id_total_gst_input").value = "0";
+        document.getElementById("id_total_value_input").value = totalValue.innerText;
+        var amountReceived = document.getElementById("id_amount_received").value;
+        var balanceDue = document.getElementById("id_balance_due")
+        var balanceDueInput = document.getElementById("id_balance_due_input")
+        if(amountReceived){
+            var outstanding = parseFloat(parseFloat(totalValue.innerText) - parseFloat(amountReceived)).toFixed(2);
+            balanceDue.innerText = outstanding;
+            balanceDueInput.value = outstanding;
+        }else{
+            balanceDue.innerText = totalValue.innerText;
+            balanceDueInput.value = parseFloat(0).toFixed(2);
+        }
+    }
+    
+    
+}
+function downloadAll(invID){
+    window.location.href = "/invoicing/downloadattachments/{{invoice.public_link}}";
+}
+function viewAll(){
+    window.location.href = "/invoicing/viewattachments/{{invoice.public_link}}";
+}
+
+function acceptQuote(public_link){
+    displayLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        public_code: public_link,
+        status: 1,
+    };
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'public_ajax_quotestatus' %}",
+        data: payload,
+        success: function(data){
+            if(data.result == "success"){
+                showMessage('alert-success', "Product has been added successfully");
+                window.location.reload();
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(){
+            displayLoadingSpinner(false);
+        }
+    })
+}
+function hidequoteconfirmation(){
+    $("#confirmation_window").hide(200);
+}
+function showquoteconfirmation(){
+    $("#confirmation_window").show(200);
+}
+function statusWindow(input){
+    if(input){
+        $("#status_window").show(200);
+    }else{
+        $("#status_window").hide(200);
+    }
+}
+{% if invoice.quote_status.status == True %}
+statusWindow(true);
+{% endif %}
+
+function quotedecline(status){
+    if(status){
+        $("#decline_window").show(200);
+    }else{
+        $("#decline_window").hide(200);
+    }
+}
+function declineQuote(public_link){
+    displayLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        public_code: public_link,
+        status: 0,
+    };
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'public_ajax_quotestatus' %}",
+        data: payload,
+        success: function(data){
+            if(data.result == "success"){
+                showMessage('alert-success', "Quote Rejected");
+                window.location.reload();
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(){
+            displayLoadingSpinner(false);
+        }
+    })
+}
+
+updateTotalValue();
+
+</script>
+
+{% endblock %}

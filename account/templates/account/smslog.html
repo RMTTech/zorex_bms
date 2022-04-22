@@ -1,0 +1,43 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+
+<div>
+    <div class="container p-0 mw-1000px mt-3">
+        <div class="card m-2 bg-light Regular shadow">
+            <div class="card-header text-center h4">SMS Log</div>
+            <div class="card-body p-2">
+                <div class="table-responsive" style="max-height: 80vh;">
+                    <table class="table table-sm table-bordered fs-7">
+                        <thead>
+                            <tr>
+                                <td>ID</td>
+                                <td>Number</td>
+                                <td>Message</td>
+                                <td>Status</td>
+                                <td>Date</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{log.id}}</td>
+                                <td>{{log.number}}</td>
+                                <td>{{log.message}}</td>
+                                <td>{%if log.status%}Delivered{%else%}UnDelivered{%endif%}</td>
+                                <td>{{log.date_created|date:"d M Y g:iA"}}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

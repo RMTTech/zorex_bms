@@ -1,0 +1,1184 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}
+<script type="module" src="{% static 'frontend/cropperjs/dist/cropper.js' %}"></script>
+<link rel="stylesheet" href="{% static 'frontend/cropperjs/dist/cropper.css' %}">
+{% endblock %}
+
+{% block main %}
+<div>
+    <div class="container p-1 mw-1400px">
+        <div class="card text-center">
+            <div class="card-header bg-dark page-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link nav-link-sm active" id="profile-toggle" data-bs-toggle="tab" data-bs-target="#profile-tab" type="button" role="tab" aria-controls="profile-tab" aria-selected="true">Profile</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link nav-link-sm" id="banking-toggle" data-bs-toggle="tab" data-bs-target="#banking-tab" type="button" role="tab" aria-controls="banking-tab" aria-selected="false">Banking</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link nav-link-sm" id="econtact-toggle" data-bs-toggle="tab" data-bs-target="#econtact-tab" type="button" role="tab" aria-controls="econtact-tab" aria-selected="false">E.Contact</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link nav-link-sm" id="licenses-toggle" data-bs-toggle="tab" data-bs-target="#licenses-tab" type="button" role="tab" aria-controls="licenses-tab" aria-selected="false">Licenses</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link nav-link-sm " id="tfd-toggle" data-bs-toggle="tab" data-bs-target="#tfd-tab" type="button" role="tab" aria-controls="tfd-tab" aria-selected="false">TFN</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="tab-content">
+                <!-- Profile Page -->
+                <div id="profile-tab" class="tab-pane fade show active" role="tabpanel" aria-labelledby="profile-tab">
+                    <div class="position-relative">
+                        <div id="profile_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body text-start">
+                            <div class="mb-2 d-block px-0 position-relative">
+                                <div class="w-200px m-auto mb-1" id="id_cancel_confirm">
+                                    <div id="id_confirm" class="float-end p-2">
+                                        <svg role="button" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-check-lg text-success" viewBox="0 0 16 16">
+                                            <path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a.486.486 0 0 1 .04-.045z"/>
+                                        </svg>
+                                    </div>
+                                    <div id="id_cancel" class="p-2">
+                                        <svg role="button" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-x-lg text-danger" viewBox="0 0 16 16">
+                                            <path d="M1.293 1.293a1 1 0 0 1 1.414 0L8 6.586l5.293-5.293a1 1 0 1 1 1.414 1.414L9.414 8l5.293 5.293a1 1 0 0 1-1.414 1.414L8 9.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L6.586 8 1.293 2.707a1 1 0 0 1 0-1.414z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <input type="file" class="d-none" name="profile_image" id="id_profile_image" onchange="readURL(this)">
+                                <div class="d-block position-relative">
+                                    <div id="id_image_edit_container" class="d-block w-200px mx-auto overflow-hidden">
+                                        <img class="rounded-4 mx-auto w-200px d-block shadow" id="id_profile_image_display" src="{{account.profile_img.url}}" alt="">
+                                        <div id="id_edit_container">
+                                            <button type="button" id="id_edit" class="btn btn-primary">Edit</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-block text-center">
+                                <button type="button" class="btn btn-danger btn-sm m-auto" onclick="deleteAccount()">Delete Account</button>
+                            </div>
+                            <div class="row my-2">
+                                <div class="col-sm-4 my-1">
+                                    <label for="id_first_name">First Name*</label>
+                                    <input onblur="uppercase('id_first_name')" type="text" name="first_name" maxlength="30" class="form-control" id="id_first_name" required {% if account.first_name %}value="{{account.first_name}}"{% else %} placeholder="First Name" {% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="id_last_name">Last Name*</label>
+                                    <input onblur="uppercase('id_last_name')" type="text" name="last_name" maxlength="30" class="form-control" id="id_last_name" required {% if account.last_name %}value="{{account.last_name}}"{% else %} placeholder="Last Name" {% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="id_gender">Gender</label>
+                                    <select name="gender" class="form-control" id="id_gender">
+                                        <option value="">-----</option>
+                                        <option {% if  account.gender == "Male" %} selected {% endif %}value="Male">Male</option>
+                                        <option {% if  account.gender == "Female" %} selected {% endif %}value="Female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="id_job_title">Job Title</label>
+                                    <input type="text" name="job_title" class="form-control" id="id_job_title" {% if account.job_title %}value="{{account.job_title}}"{% else %} placeholder="Job Title" {% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="id_color">Calendar Color</label>
+                                    <input style="height: 37px;" type="color" name="color" id="id_color" class="form-control" {% if account.color %} value="{{account.color}}"{% endif %} title="The color you choose here will highlight your allocated Appointments">
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="id_number">Mobile Number*</label>
+                                    <input type="text" name="number" class="form-control" id="id_number" maxlength="16" pattern="[0-9 -]{10,}" required {% if account.number %} value="{{account.number}}"{% else %} placeholder="Mobile Number"{% endif %}>
+                                </div>
+                                <div class="col-sm-6 my-1">
+                                    <label for="inputEmail4">Email</label>
+                                    <input type="email" name="email" class="form-control" id="id_email" required readonly {% if account.email %}value="{{account.email}}"{% else %} placeholder="Email" {% endif %}>
+                                </div>
+                                <div class="col-sm-6 my-1">
+                                    <label for="id_date_of_birth">Date Of Birth</label>
+                                    <input type="date" name="date_of_birth" class="form-control" id="id_date_of_birth" required {% if account.date_of_birth %}value="{{account.date_of_birth|date:'Y-m-d'}}"{%else%}placeholder="YYYY-MM-DD"{% endif %}>
+                                </div>
+                                <div class="col-sm-12 my-1">
+                                    <label for="id_address">Address*</label>
+                                    <input type="text" class="form-control" id="id_address" placeholder="Address" required {% if account.address %}value="{{account.address}}"{% endif %}>
+                                    <div class="d-none">
+                                        <input type="text" id="account_house_no" value="{{account.address.house_no}}">
+                                        <input type="text" id="account_street" value="{{account.address.street}}">
+                                        <input type="text" id="account_suburb" value="{{account.address.suburb}}">
+                                        <input type="text" id="account_state" value="{{account.address.state}}">
+                                        <input type="text" id="account_postcode" value="{{account.address.postcode}}">
+                                        <input type="text" id="account_country" value="{{account.address.country}}">
+                                    </div>
+                                </div>
+                                <hr class="mt-3 mb-1">
+                                <div class="text-center fs-4 my-0">Consents and Features</div>
+                                <div class="ms-2">
+                                    {% if request.user.is_admin %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="id_is_staff" name="is_staff" {% if account.is_staff %}checked="True"{% endif %}>
+                                        <label class="form-check-label" for="id_is_staff">
+                                            Staff Account
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="id_is_admin" name="is_admin" {% if account.is_admin %}checked="True"{% endif %}>
+                                        <label class="form-check-label" for="id_is_admin">
+                                            Admin Account
+                                        </label>
+                                    </div>
+                                    {% elif user.is_parent and user != account %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="id_is_staff" name="is_staff" {% if not user.is_parent %}disabled{% endif %} {% if account.is_staff %}checked="True"{% endif %}>
+                                        <label class="form-check-label" for="id_is_staff">
+                                            Staff Access <span class="fs-8">"Can see, edit and create Invoices and Appointments"</span>
+                                        </label>
+                                    </div>
+                                    {%endif%}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="id_promotions" name="promotions" {% if account.promotions %}checked="True"{% endif %}>
+                                        <label class="form-check-label" for="id_promotions">
+                                            Promotions
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="id_privacy_policy" name="privacy_policy" required {% if account.privacy_policy %}checked="True"{% endif %}>
+                                        <label class="form-check-label" for="id_privacy_policy">
+                                            <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="id_terms_conditions" name="terms_conditions" required {% if account.terms_conditions %}checked="True"{% endif %}>
+                                        <label class="form-check-label" for="id_terms_conditions">
+                                            <a href="{% url 'terms_conditions' %}">Terms & Conditions</a>
+                                        </label>
+                                    </div>
+                                    {% if user.is_admin or user.is_parent %}
+                                        {% if user == account %}
+                                        <span class="fst-italic">You have <span class="fw-bolder text-primary">{{account.Appointments_count}}</span> Appointments in your Database</span>
+                                        <br><span class="fst-italic">You have <span class="fw-bolder text-primary">{{account.customers_count}}</span> Customers in your Database</span>
+                                        <br><span class="fst-italic">You have <span class="fw-bolder text-primary">{{account.accounts_count}}</span> Accounts in your Database</span>
+                                        <br><img src="{% static 'account/images/tick.svg' %}" class="align-top w-24px"> Admin privileges <span class="fs-8">"Can change business details"</span><br>
+                                        {% else %}
+                                    
+                                            {% if account.is_staff %}
+                                            <img src="{% static 'account/images/tick.svg' %}" class="align-top w-24px">{% else %}
+                                            <img src="{% static 'account/images/cross.svg' %}" class="align-top w-24px">
+                                            {% endif %} 
+                                            Staff privileges <span class="fs-8">"Can see, edit and create Invoices and Appointments"</span>
+                                        {%endif%}
+                                    {%else%}
+                                        {% if account.is_staff %}
+                                            <img src="{% static 'account/images/tick.svg' %}" class="align-top w-24px">{% else %}
+                                            <img src="{% static 'account/images/cross.svg' %}" class="align-top w-24px">
+                                        {% endif %} 
+                                            Staff privileges <span class="fs-8">"Can see, edit and create Invoices and Appointments"</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if account == request.user %}
+                            <div class="d-block text-center my-1">
+                                <a role="button" class="btn btn-sm btn-outline-primary" href="{% url 'password_change' %}">Change Password</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer text-center bg-dark page-header">
+                            <button class="btn btn-sm btn-success col-sm-2 m-1" style="width:unset;" onclick="profileAPI('PATCH')">Update</button>
+                            <button class="btn btn-sm btn-primary col-sm-2 m-1" style="width:unset;" onclick="profileAPI('GET')">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Banking Page -->
+                <div id="banking-tab" class="tab-pane fade" role="tabpanel" aria-labelledby="banking-tab">
+                    <div class="position-relative">
+                        <div id="banking_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body text-start">
+                            <div class="text-center fs-4 my-0">Personal Bank Account Details</div>
+                            <div class="row my-2">
+                                <div class="col-sm-6 my-1">
+                                    <label for="bank_name">Bank Name*</label>
+                                    <input type="text" maxlength="50" class="form-control" id="bank_name" required {% if account.bank.bank_name %}value="{{account.bank.bank_name}}"{% else %} placeholder="Bank Name" {% endif %}>
+                                </div>
+                                <div class="col-sm-6 my-1">
+                                    <label for="account_name">Account Name*</label>
+                                    <input type="text" maxlength="100" class="form-control" id="account_name" required {% if account.bank.account_name %}value="{{account.bank.account_name}}"{% else %} placeholder="Account Name" {% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="account_type">Account Type*</label>
+                                    <select name="account_type" id="account_type" class="form-control">
+                                        <option {% if  account.bank.account_type == "Electronic" %} selected {% endif %}value="Electronic">Electronic</option>
+                                        <option {% if  account.bank.account_type == "Manual deposite" %} selected {% endif %}value="Manual deposite">Manual deposite</option>
+                                        <option {% if  account.bank.account_type == "Cash/cheque" %} selected {% endif %}value="Cash/cheque">Cash/cheque</option>
+                                        <option {% if  account.bank.account_type == "BPAY" %} selected {% endif %}value="BPAY">BPAY</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="account_bsb">Account BSB*</label>
+                                    <input type="text" maxlength="10" class="form-control" id="account_bsb" required {% if account.bank.account_bsb %}value="{{account.bank.account_bsb}}"{% else %} placeholder="Account Name" {% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="account_number">Account Number*</label>
+                                    <input type="text" maxlength="14" class="form-control" id="account_number" required {% if account.bank.account_number %}value="{{account.bank.account_number}}"{% else %} placeholder="Account Name" {% endif %}>
+                                </div>
+                                <hr class="my-2">
+                                <div class="text-center fs-4 my-0">Super Funds</div>
+                                <div class="col-sm-3 my-1">
+                                    <label for="fund_name">Fund Name</label>
+                                    <input type="text" maxlength="120" class="form-control" id="fund_name" required {% if account.super.fund_name %}value="{{account.super.fund_name}}"{% else %} placeholder="Fund Name" {% endif %}>
+                                </div>
+                                <div class="col-sm-3 my-1">
+                                    <label for="product_code">Product Code</label>
+                                    <input type="text" maxlength="30" class="form-control" id="product_code" required {% if account.super.product_code %}value="{{account.super.product_code}}"{% else %} placeholder="Product Code" {% endif %}>
+                                </div>
+                                <div class="col-sm-3 my-1">
+                                    <label for="member_number">Member Number</label>
+                                    <input type="text" maxlength="25" class="form-control" id="member_number" required {% if account.super.member_number %}value="{{account.super.member_number}}"{% else %} placeholder="Member Number" {% endif %}>
+                                </div>
+                                <div class="col-sm-3 my-1">
+                                    <label for="pay_to_fund">Pay To This Fund*</label>
+                                    <select name="pay_to_fund" id="pay_to_fund" class="form-control">
+                                        <option {% if account.super.pay_to_fund %}selected {% endif %}value="true">Yes</option>
+                                        <option {% if not account.super.pay_to_fund %}selected {% endif %}value="false">Use Employer Preferred Super Fund</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center bg-dark page-header">
+                            <button class="btn btn-sm btn-success col-sm-2 m-1" style="width:unset;" onclick="bankingAPI('PATCH')">Update</button>
+                            <button class="btn btn-sm btn-primary col-sm-2 m-1" style="width:unset;" onclick="bankingAPI('GET')">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- E Contact Page -->
+                <div id="econtact-tab" class="tab-pane fade" role="tabpanel" aria-labelledby="econtact-tab">
+                    <div class="position-relative">
+                        <div id="econtact_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body text-start">
+                            <div class="text-center fs-4 my-0">Emergency Contact Details</div>
+                            <div class="row my-2">
+                                <div class="col-sm-6 my-1">
+                                    <label for="e_name">Full Name*</label>
+                                    <input type="text" maxlength="80" class="form-control" id="e_name" required {% if account.econtact.name %}value="{{account.econtact.name}}"{% else %} placeholder="Full Name" {% endif %}>
+                                </div>
+                                <div class="col-sm-6 my-1">
+                                    <label for="e_relationship">Relationship*</label>
+                                    <input type="text" maxlength="80" class="form-control" id="e_relationship" required {% if account.econtact.relationship %}value="{{account.econtact.relationship}}"{% else %} placeholder="Relationship To You" {% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="e_address">Address*</label>
+                                    <input type="text" maxlength="160" class="form-control" id="e_address" required {% if account.econtact.address %}value="{{account.econtact.address}}"{% else %} placeholder="Residential Address" {% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="e_number">Contact Number*</label>
+                                    <input type="text" maxlength="16" class="form-control" id="e_number" required {% if account.econtact.number %}value="{{account.econtact.number}}"{% else %} placeholder="Mobile Number Preferred" {% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center bg-dark page-header">
+                            <button class="btn btn-sm btn-success col-sm-2 m-1" style="width:unset;" onclick="econtactAPI('PATCH')">Update</button>
+                            <button class="btn btn-sm btn-primary col-sm-2 m-1" style="width:unset;" onclick="econtactAPI('GET')">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Licenses Page -->
+                <div id="licenses-tab" class="tab-pane fade" role="tabpanel" aria-labelledby="licenses-tab">
+                    <div class="position-relative">
+                        <div id="licenses_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body text-start">
+                            <div class="text-center fs-4 my-0">Licenses</div>
+                            <div class="row my-2">
+                                <div class="input-group mb-3 my-2">
+                                    <input class="form-control form-control-sm" id="licenseformFileSm" name="FILES" type="file" onchange="licenseURL(this)">
+                                </div>
+                                <div class="p-1">
+                                    <table class="table fs-7 table-bordered text-center align-middle table-sm">
+                                        <thead class="card-header bg-dark page-header">
+                                            <tr>
+                                                <td>License Name/Title</td>
+                                                <td>Obtained Date</td>
+                                                <td>Expiry Date</td>
+                                                <td></td>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="attachment_table">
+                                            {%for attachment in account.licenses.all%}
+                                            <tr id="attachmentrow{{attachment.id}}">
+                                                <td><a target="_blank" href="{{attachment.file.url}}"><span>{{attachment.name}}</span></a></td>
+                                                <td>{{attachment.obtained_date|date:"d M Y"}}</td>
+                                                <td>{% if attachment.expiry_date %}{{attachment.expiry_date|date:"d M Y"}}{% else %}Doesn't Expire{% endif %}</td>
+                                                <td><a role="button" class="btn btn-sm btn-danger fs-8" onclick="licensesAPI('DELETE', {{attachment.id}})">DEL</a></td>
+                                            </tr>
+                                            {%endfor%}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center bg-dark page-header">
+                            <button class="btn btn-sm btn-primary col-sm-2 m-1" style="width:unset;" onclick="licensesAPI('GET')">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- tfd Page -->
+                <div id="tfd-tab" class="tab-pane fade" role="tabpanel" aria-labelledby="tfd-tab">
+                    <div class="position-relative">
+                        <div id="tfd_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body text-start">
+                            <div class="text-center fs-4 my-0">Tax File Declaration</div>
+                            <div class="text-center">
+                                <a target="_blank" href="https://www.ato.gov.au/Forms/tfn-declaration/">Learn more & Download the Form</a>
+                            </div>
+                            <div class="row my-2">
+                                <div class="col-sm-4 my-1">
+                                    <label for="tfd_number">Tax File Number*</label>
+                                    <input type="text" maxlength="16" class="form-control" id="tfd_number" required {% if account.tfd.number %}value="{{account.tfd.number}}"{% else %} placeholder="TAX File Number"{% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="tfd_previous_name">Previous Name</label>
+                                    <input type="text" maxlength="80" class="form-control" id="tfd_previous_name" required {% if account.tfd.previous_name %}value="{{account.tfd.previous_name}}"{% else %} placeholder="Previous Name"{% endif %}>
+                                </div>
+                                <div class="col-sm-4 my-1">
+                                    <label for="tfd_employment_type">Employment type</label>
+                                    <select name="tfd_employment_type" class="form-control" id="tfd_employment_type">
+                                        <option value="">-----</option>
+                                        <option {% if  account.tfd.employment_type == "Full Time" %} selected {% endif %}value="Full Time">Full Time</option>
+                                        <option {% if  account.tfd.employment_type == "Part Time" %} selected {% endif %}value="Part Time">Part Time</option>
+                                        <option {% if  account.tfd.employment_type == "Casual" %} selected {% endif %}value="Casual">Casual</option>
+                                        <option {% if  account.tfd.employment_type == "Labour Hire" %} selected {% endif %}value="Labour Hire">Labour Hire</option>
+                                        <option {% if  account.tfd.employment_type == "Superannuation Income Stream" %} selected {% endif %}value="Superannuation Income Stream">Superannuation Income Stream</option>
+                                    </select>
+                                </div>
+                                <hr class="my-2">
+                                <div><span class="fs-5 fw-bold">Tax Calculation Options:</span>
+                                    <div class="ps-3">
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_australian_resident" {% if account.tfd.australian_resident %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_australian_resident">Australian resident for tax purposes</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_tax_free_threshold" {% if account.tfd.tax_free_threshold %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_tax_free_threshold">Claim tax free threshold</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_is_approved_holiday" {% if account.tfd.is_approved_holiday %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_is_approved_holiday">Is approved working holiday maker</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_pensioners_tax_offset" {% if account.tfd.pensioners_tax_offset %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_pensioners_tax_offset">Claim seniors and pensioners tax offset</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_overseas_forces" {% if account.tfd.overseas_forces %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_overseas_forces">Claim zone, overseas forces or dependent (invalid and carer) tax offset</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_accumulated_stsl_debt" {% if account.tfd.accumulated_stsl_debt %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_accumulated_stsl_debt">Has accumulated STSL debt</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_seasonal_worker" {% if account.tfd.seasonal_worker %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_seasonal_worker">Is a seasonal worker</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="tfd_withholding_variation" {% if account.tfd.withholding_variation %}checked{% endif %}>
+                                                <label class="form-check-label" for="tfd_withholding_variation">Has approved withholding variation</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="my-2">
+                                <div><span class="fs-5 fw-bold">Medicare Levy Options:</span>{{account.tfd.medicare_levy}}
+                                    <div class="col-sm-12 ps-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_0" {% if account.tfd.medicare_levy == '' or account.tfd.medicare_levy == 'tfd_medicare_levy_0' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">None</label>
+                                        </div>
+                                        <span>Medicare Levy Exemption Options:</span>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_1" {% if account.tfd.medicare_levy == 'tfd_medicare_levy_1' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">Half</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_2" {% if account.tfd.medicare_levy == 'tfd_medicare_levy_2' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">Full</label>
+                                        </div>
+                                        <span>Increase withholding to cover Medicare Levy Surcharge:</span>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_3" {% if account.tfd.medicare_levy == 'tfd_medicare_levy_3' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">Tier 1 - 1%</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_4" {% if account.tfd.medicare_levy == 'tfd_medicare_levy_4' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">Tier 2 - 1.25%</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_5" {% if account.tfd.medicare_levy == 'tfd_medicare_levy_5' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">Tier 3 - 1.5%</label>
+                                        </div>
+                                        <span>Medicare Levy reduction claim options:</span>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_6" {% if account.tfd.medicare_levy == 'tfd_medicare_levy_6' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">Employee have a spouse</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="tfd_medicare_levy" value="tfd_medicare_levy_7" {% if account.tfd.medicare_levy == 'tfd_medicare_levy_7' %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_medicare_levy">Employee have a dependent children</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="my-2">
+                                <div class="col-sm-12 my-1">
+                                    <label for="tfd_date_signed">Date Signed</label>
+                                    <input type="date" class="form-control" id="tfd_date_signed" required {% if account.tfd.date_signed %}value="{{account.tfd.date_signed|date:'Y-m-d'}}"{% endif %}>
+                                    <span class="fs-9 lh-1">This is the date the tax file declaration was signed by the employee. If the employee has not completed the declaration yet, it's ok to leave it blank.</span>
+                                </div>
+                                <div><span class="fs-6 fw-bold">ATO Lodgement Status:</span>
+                                    <div class="col-sm-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="tfd_lodgement_status" {% if account.tfd.lodgement_status %}checked{% endif %}>
+                                            <label class="form-check-label" for="tfd_lodgement_status">a Copy of the signed <a target="_blank" href="https://www.ato.gov.au/Forms/tfn-declaration/">form</a> has been sent to the ATO.</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center bg-dark page-header">
+                            <button class="btn btn-sm btn-success col-sm-2 m-1" style="width:unset;" onclick="tfdAPI('PATCH')">Update</button>
+                            <button class="btn btn-sm btn-primary col-sm-2 m-1" style="width:unset;" onclick="tfdAPI('GET')">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    
+{% endblock %}
+
+{% block script %}
+
+<script type="text/javascript">
+    // TFD API
+    function tfdLoadingSpinner(isDisplayed){
+        if(isDisplayed){
+            $("#tfd_loading_spinner").show();
+        }
+        else{
+            $("#tfd_loading_spinner").hide();
+        }
+    }
+    function tfdAPI(apiCode){
+        let tfd_medicare_levy = $("input[name='tfd_medicare_levy']:checked").val();
+        tfdLoadingSpinner(true);
+        let payload = {account_id:"{{account.id}}"}
+        if (apiCode == "PATCH"){
+            payload = {
+                account_id:"{{account.id}}",
+                medicare_levy: tfd_medicare_levy,
+                number: $("#tfd_number")[0].value,
+                previous_name: $("#tfd_previous_name")[0].value,
+                employment_type: $("#tfd_employment_type")[0].value,
+                australian_resident: $("#tfd_australian_resident")[0].checked,
+                tax_free_threshold: $("#tfd_tax_free_threshold")[0].checked,
+                is_approved_holiday: $("#tfd_is_approved_holiday")[0].checked,
+                pensioners_tax_offset: $("#tfd_pensioners_tax_offset")[0].checked,
+                overseas_forces: $("#tfd_overseas_forces")[0].checked,
+                accumulated_stsl_debt: $("#tfd_accumulated_stsl_debt")[0].checked,
+                seasonal_worker: $("#tfd_seasonal_worker")[0].checked,
+                withholding_variation: $("#tfd_withholding_variation")[0].checked,
+                date_signed: $("#tfd_date_signed")[0].value,
+                lodgement_status: $("#tfd_lodgement_status")[0].value,
+            }
+        }
+        $.ajax({
+            type: apiCode,
+            datatype: 'json',
+            url: "{% url 'TfnAPI' %}",
+            data: payload,
+            headers: {'X-CSRFToken': '{{csrf_token}}'},
+            success: function(data){
+                if (data.result == "success"){
+                    $("#tfd_number")[0].value = data.tfd.number;
+                    $("#tfd_previous_name")[0].value = data.tfd.previous_name;
+                    $("#tfd_employment_type")[0].value = data.tfd.employment_type;
+                    $("#tfd_australian_resident")[0].checked = data.tfd.australian_resident;
+                    $("#tfd_tax_free_threshold")[0].checked = data.tfd.tax_free_threshold;
+                    $("#tfd_is_approved_holiday")[0].checked = data.tfd.is_approved_holiday;
+                    $("#tfd_pensioners_tax_offset")[0].checked = data.tfd.pensioners_tax_offset;
+                    $("#tfd_overseas_forces")[0].checked = data.tfd.overseas_forces;
+                    $("#tfd_accumulated_stsl_debt")[0].checked = data.tfd.accumulated_stsl_debt;
+                    $("#tfd_seasonal_worker")[0].checked = data.tfd.seasonal_worker;
+                    $("#tfd_withholding_variation")[0].checked = data.tfd.withholding_variation;
+                    $("#tfd_date_signed")[0].value = data.tfd.date_signed;
+                    $("#tfd_lodgement_status")[0].checked = data.tfd.lodgement_status;
+                    $("input[value=" + data.tfd.medicare_levy + "]").prop("checked", true);
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                tfdLoadingSpinner(false);
+            },
+        })
+    }
+    // Licenses API
+    function licensesLoadingSpinner(isDisplayed){
+        if(isDisplayed){
+            $("#licenses_loading_spinner").show();
+        }
+        else{
+            $("#licenses_loading_spinner").hide();
+        }
+    }
+    function licenseURL(input){
+        if (input.files[0].size < 50000000){
+            var reader = new FileReader()
+            reader.onload = function(e){
+                var image = e.target.result
+                let fileName = input.files[0].name
+                licenseAttachment(image, fileName)
+                activateToolTip()
+            }
+            reader.readAsDataURL(input.files[0])
+        }else{
+            $("#licenseformFileSm")[0].value = "";
+            showMessage('alert-error',"File is Too Large")
+        }
+    }
+    function licenseAttachment(source, fileName){
+        let attachmentTable = document.getElementById("attachment_table")
+        let tr = document.createElement("tr");
+        tr.id = "attachmentrow";
+        let td1 = document.createElement("td");
+        let input1 = document.createElement("input");
+        input1.id = "l_name";
+        input1.value = fileName;
+        input1.placeholder = fileName;
+        let img1 = document.createElement("img")
+        img1.className = "d-none";
+        img1.src = source;
+        img1.id = "license_img"
+        td1.appendChild(input1)
+        td1.appendChild(img1)
+        let td2 = document.createElement("td");
+        let input2 = document.createElement("input");
+        input2.id = "obtained_date";
+        input2.type = "date";
+        td2.appendChild(input2)
+        let td3 = document.createElement("td");
+        let input3 = document.createElement("input");
+        input3.id = "expiry_date";
+        input3.type = "date";
+        input3.title = "If no expiry date, Please leave blank";
+        input3.setAttribute("data-bs-toggle","tooltip");
+        input3.setAttribute("data-bs-placement","top");
+        td3.appendChild(input3);
+        let td4 = document.createElement("td");
+        let a4 = document.createElement("a");
+        a4.setAttribute("role","button");
+        a4.setAttribute("onclick","licensesAPI('PUT')");
+        a4.className = "btn btn-sm btn-success fs-8";
+        a4.innerText = "Add";
+        td4.appendChild(a4);
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        attachmentTable.appendChild(tr);
+    }
+    function licensesAPI(apiCode, attachID){
+        licensesLoadingSpinner(true);
+        if (apiCode == "PUT" && $("#obtained_date")[0].value){
+            payload = {
+                account_id: "{{account.id}}",
+                name: $("#l_name")[0].value,
+                obtained_date: $("#obtained_date")[0].value,
+                expiry_date: $("#expiry_date")[0].value,
+                image: $("#license_img")[0].src,
+                file: $("#licenseformFileSm")[0].value,
+                filename: $("#licenseformFileSm")[0].files[0].name,
+            }
+            $.ajax({
+                type: apiCode,
+                datatype: 'json',
+                url: "{% url 'LicensesAPI' %}",
+                data: payload,
+                headers: {'X-CSRFToken': '{{csrf_token}}'},
+                success: function(data){
+                    if (data.result == "success"){
+                        window.location.reload();
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', data.message);
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error','Please check your internet and try again!');
+                },
+                complete: function(data){
+                    licensesLoadingSpinner(false);
+                },
+            })
+        }
+        else if (apiCode == "GET") {
+            let payload = {
+                account_id: "{{account.id}}",
+            }
+            $.ajax({
+                type: apiCode,
+                datatype: 'json',
+                url: "{% url 'LicensesAPI' %}",
+                data: payload,
+                headers: {'X-CSRFToken': '{{csrf_token}}'},
+                success: function(data){
+                    if (data.result == "success"){
+                        showMessage('alert-success', data.message);
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', data.message);
+                    }
+                },
+                error: function(data){
+                    if (data.responseJSON.detail == "Not found.") {
+                        showMessage('alert-error', data.responseJSON.detail);
+                    }
+                    else {
+                        showMessage('alert-error','Please check your internet and try again!');
+                    }
+                },
+                complete: function(data){
+                    licensesLoadingSpinner(false);
+                },
+            })
+        }
+        else if (apiCode == "DELETE") {
+            let payload = {
+                account_id: "{{account.id}}",
+                attach_id: attachID,
+            }
+            $.ajax({
+                type: apiCode,
+                datatype: 'json',
+                url: "{% url 'LicensesAPI' %}",
+                data: payload,
+                headers: {'X-CSRFToken': '{{csrf_token}}'},
+                success: function(data){
+                    if (data.result == "success"){
+                        $("#attachmentrow"+attachID).hide();
+                        showMessage('alert-success', data.message);
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', data.message);
+                    }
+                },
+                error: function(data){
+                    if (data.responseJSON.detail == "Not found.") {
+                        showMessage('alert-error', data.responseJSON.detail);
+                    }
+                    else {
+                        showMessage('alert-error','Please check your internet and try again!');
+                    }
+                },
+                complete: function(data){
+                    licensesLoadingSpinner(false);
+                },
+            })
+        }
+        else {
+            showMessage("alert-info","Please Set Obtained Date")
+            licensesLoadingSpinner(false);
+        }
+    }
+
+    // Emergency Contact API
+    function econtactLoadingSpinner(isDisplayed){
+        if(isDisplayed){
+            $("#econtact_loading_spinner").show();
+        }
+        else{
+            $("#econtact_loading_spinner").hide();
+        }
+    }
+    function econtactAPI(apiCode){
+        econtactLoadingSpinner(true);
+        if (apiCode == "GET"){
+            payload = {account_id: '{{account.id}}'}
+        }
+        else if (apiCode == "PATCH"){
+            payload = {
+                account_id: '{{account.id}}',
+                name: $("#e_name")[0].value,
+                relationship: $("#e_relationship")[0].value,
+                address: $("#e_address")[0].value,
+                number: $("#e_number")[0].value,
+            }
+        }
+        $.ajax({
+            type: apiCode,
+            datatype: 'json',
+            url: "{% url 'EContactAPI' %}",
+            data: payload,
+            headers: {'X-CSRFToken': '{{csrf_token}}'},
+            success: function(data){
+                if (data.result == "success"){
+                    $("#e_name")[0].value = data.econtact.name
+                    $("#e_relationship")[0].value = data.econtact.relationship
+                    $("#e_address")[0].value = data.econtact.address
+                    $("#e_number")[0].value = data.econtact.number
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                econtactLoadingSpinner(false);
+            },
+        })
+    }
+
+    // Banking API
+    function bankingLoadingSpinner(isDisplayed){
+        if(isDisplayed){
+            $("#banking_loading_spinner").show();
+        }
+        else{
+            $("#banking_loading_spinner").hide();
+        }
+    }
+    function bankingAPI(apiCode){
+        bankingLoadingSpinner(true);
+        if (apiCode == "GET"){
+            payload = {account_id: '{{account.id}}'}
+        }
+        else if (apiCode == "PATCH"){
+            payload = {
+                account_id: '{{account.id}}',
+                account_type: $("#account_type")[0].value,
+                account_bsb: $("#account_bsb")[0].value,
+                account_number: $("#account_number")[0].value,
+                account_name: $("#account_name")[0].value,
+                bank_name: $("#bank_name")[0].value,
+                fund_name: $("#fund_name")[0].value,
+                product_code: $("#product_code")[0].value,
+                member_number: $("#member_number")[0].value,
+                pay_to_fund: $("#pay_to_fund")[0].value,
+            }
+        }
+        $.ajax({
+            type: apiCode,
+            datatype: 'json',
+            url: "{% url 'BankingAPI' %}",
+            data: payload,
+            headers: {'X-CSRFToken': '{{csrf_token}}'},
+            success: function(data){
+                if (data.result == "success"){
+                    $("#account_type")[0].value = data.bank.account_type;
+                    $("#account_bsb")[0].value = data.bank.account_bsb;
+                    $("#account_number")[0].value = data.bank.account_number;
+                    $("#account_name")[0].value = data.bank.account_name;
+                    $("#bank_name")[0].value = data.bank.bank_name;
+                    $("#fund_name")[0].value = data.fund.fund_name;
+                    $("#product_code")[0].value = data.fund.product_code;
+                    $("#member_number")[0].value = data.fund.member_number;
+                    $("#pay_to_fund")[0].value = data.fund.pay_to_fund;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                bankingLoadingSpinner(false);
+            },
+        })
+    }
+
+    // Profile API
+    function profileLoadingSpinner(isDisplayed){
+        if(isDisplayed){
+            $("#profile_loading_spinner").show();
+        }
+        else{
+            $("#profile_loading_spinner").hide();
+        }
+    }
+    function profileAPI(apiCode){
+        if ($("#id_privacy_policy")[0].checked && $("#id_terms_conditions")[0].checked) {
+            profileLoadingSpinner(true);
+            if (apiCode == "GET") {
+                payload = {account_id: '{{account.id}}'}
+            }
+            else {
+                payload = {
+                    account_id: '{{account.id}}',
+                    first_name: $("#id_first_name")[0].value,
+                    last_name: $("#id_last_name")[0].value,
+                    gender: $("#id_gender")[0].value,
+                    job_title: $("#id_job_title")[0].value,
+                    email: $("#id_email")[0].value,
+                    number: $("#id_number")[0].value,
+                    date_of_birth: $("#id_date_of_birth")[0].value,
+                    color: $("#id_color")[0].value,
+                    promotions: $("#id_promotions")[0].checked,
+                    privacy_policy: $("#id_privacy_policy")[0].checked,
+                    terms_conditions: $("#id_terms_conditions")[0].checked,
+                    address: $("#id_address")[0].value,
+                    house_no: $("#account_house_no")[0].value,
+                    street: $("#account_street")[0].value,
+                    suburb: $("#account_suburb")[0].value,
+                    state: $("#account_state")[0].value,
+                    postcode: $("#account_postcode")[0].value,
+                    {% if user.is_parent and user != account %}is_staff: $("#id_is_staff")[0].checked,{%endif%}
+                    {% if user.is_admin %}is_admin: $("#id_is_admin")[0].checked,{%endif%}
+                    country: $("#account_country")[0].value,
+                }
+            }
+            $.ajax({
+                type: apiCode,
+                datatype: 'json',
+                url: "{% url 'ProfileAPI' %}",
+                data: payload,
+                headers: {'X-CSRFToken': '{{csrf_token}}'},
+                success: function(data){
+                    if (data.result == "success"){
+                        $("#id_first_name")[0].value = data.account.first_name;
+                        $("#id_last_name")[0].value = data.account.last_name;
+                        $("#id_gender")[0].value = data.account.gender;
+                        $("#id_job_title")[0].value = data.account.job_title;
+                        $("#id_email")[0].value = data.account.email;
+                        $("#id_number")[0].value = data.account.number;
+                        $("#id_date_of_birth")[0].value = data.account.date_of_birth;
+                        $("#id_color")[0].value = data.account.color;
+                        $("#id_address")[0].value = data.address.address;
+                        $("#account_house_no")[0].value = data.address.house_no;
+                        $("#account_street")[0].value = data.address.street;
+                        $("#account_suburb")[0].value = data.address.suburb;
+                        $("#account_state")[0].value = data.address.state;
+                        $("#account_postcode")[0].value = data.address.postcode;
+                        $("#account_country")[0].value = data.address.country;
+                        {% if user.is_parent and user != account %}$("#id_is_staff")[0].value = data.account.is_staff;{%endif%}
+                        {% if user.is_admin %}$("#id_is_admin")[0].value = data.account.is_admin;{%endif%}
+                        $("#id_promotions")[0].checked = data.account.promotions;
+                        $("#id_privacy_policy")[0].checked = data.account.privacy_policy;
+                        $("#id_terms_conditions")[0].checked = data.account.terms_conditions;
+                        showMessage('alert-success', data.message);
+                        if (data.number_changed){
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 3000);
+                        }
+                    }
+                    else if (data.result == "error"){
+                        showMessage('alert-error', data.message);
+                    }
+                },
+                error: function(data){
+                    showMessage('alert-error','Please check your internet and try again!');
+                },
+                complete: function(data){
+                    profileLoadingSpinner(false);
+                },
+            })
+        }
+        else {
+            showMessage("alert-error","Please Read and Accept Privacy Policy and Terms & conditions")
+        }
+    }
+
+    // Profile Picture Handler
+    enableImageOverlay()
+    function runUploader(){
+        document.getElementById("id_profile_image").click();
+    }
+    let cropper, imageFile, base64ImageString, cropX, cropY, cropWidth, cropHeight, cropRotation;
+    function readURL(input){
+        if(input.files && input.files[0]){
+            var reader = new FileReader()
+            reader.onload = function(e){
+                disableImageOverlay()
+                var image = e.target.result
+                var imageField = document.getElementById("id_profile_image_display")
+                imageField.src = image
+                cropper = new Cropper(imageField, {
+                    aspectRatio: 1/1,
+                    viewMode: 2,
+                    crop(event){
+                        setImageCropProperties(
+                            image,
+                            event.detail.x,
+                            event.detail.y,
+                            event.detail.width,
+                            event.detail.height,
+                            event.detail.rotate,
+                        )
+                    }
+                })
+            }
+            reader.readAsDataURL(input.files[0])
+        }
+    }
+    function setImageCropProperties(image, x, y, width, height, rotate){
+        imageFile = image
+        cropX = x
+        cropY = y
+        cropWidth = width
+        cropHeight = height
+        cropRotation = rotate
+    }
+    function enableImageOverlay(){
+        let edit = document.getElementById("id_edit")
+        edit.style.cursor = "pointer"
+
+        let profileImage = document.getElementById("id_profile_image_display")
+        profileImage.style.opacity = "1"
+        profileImage.style.transition = ".5s ease"
+        profileImage.style.backfaceVisibility = "hidden"
+        profileImage.style.cursor = "pointer"
+
+        let editContainer = document.getElementById("id_edit_container")
+        editContainer.style.opacity = "0.3"
+        editContainer.style.position = "absolute"
+        editContainer.style.top = "60%"
+        editContainer.style.left = "50%"
+        editContainer.style.transform = "translate(-50%, 0%)"
+
+        let imageEditContainer = document.getElementById("id_image_edit_container")
+        imageEditContainer.addEventListener("mouseover", function(event){
+            profileImage.style.opacity = "0.5"
+            editContainer.style.opacity = "0.9"
+        })
+
+        imageEditContainer.addEventListener("mouseout", function(event){
+            profileImage.style.opacity = "1"
+            editContainer.style.opacity = "0.3"
+        })
+
+        imageEditContainer.addEventListener("click", function(event){
+            document.getElementById("id_profile_image").click()
+        })
+
+        let cropConfrim = document.getElementById("id_cancel_confirm")
+        cropConfrim.classList.add("d-none")
+
+        
+    }
+    function disableImageOverlay(){
+        let profileImage = document.getElementById("id_profile_image_display")
+        let edit = document.getElementById("id_edit")
+        let editContainer = document.getElementById("id_edit_container")
+        let imageEditContainer = document.getElementById("id_image_edit_container")
+
+        imageEditContainer.removeEventListener("mouseover", function(event){})
+        imageEditContainer.removeEventListener("mouseout", function(event){})
+        
+        profileImage.style.opacity = "1"
+        editContainer.style.opacity = "0"
+        edit.style.cursor = "default"
+        edit.style.opacity = "0"
+
+        imageEditContainer.removeEventListener("click", function(event){
+            event.preventDefault()
+        })
+
+        document.getElementById("id_profile_image").addEventListener("click", function(event){
+            event.preventDefault()
+        })
+        
+        let cropConfrim = document.getElementById("id_cancel_confirm")
+        cropConfrim.classList.remove("d-none")
+        cropConfrim.classList.add("d-block")
+
+        var confirm = document.getElementById("id_confirm")
+        confirm.addEventListener("click", function(event){
+            cropImage(imageFile, cropX, cropY, cropWidth, cropHeight, cropRotation)
+            
+        })
+
+        var cancel = document.getElementById("id_cancel")
+        cancel.addEventListener("click", function(event){
+            window.location.reload();
+        })
+    }
+    function cropImage(image, x, y, width, height, rotate){
+        var extStartIndex = image.indexOf("image/") + 6
+        var extEndIndex = image.indexOf(";base64")
+        var extString = image.substr(extStartIndex, extEndIndex - extStartIndex)
+        var startIndex = image.indexOf("base64,") + 7
+        var base64str = image.substr(startIndex)
+        var decoded = atob(base64str);
+        var inkb = (decoded.length / 1000000).toFixed(2)
+        // console.log("FileSize: " + inkb + " MB")
+        var requestData = {
+            "csrfmiddlewaretoken": "{{csrf_token}}",
+            "image": base64str,
+            "cropX": x,
+            "cropY": y,
+            "cropWidth": width,
+            "cropHeight": height,
+            "imageExt": extString,
+            "rotation": rotate,
+            "id": "{{account.id}}",
+        }
+        profileLoadingSpinner(true)
+        $.ajaxSetup({timeout:120000})
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "{% url 'crop_image' request.user.id %}",
+            data: requestData,
+            timeout: 120000,
+            success: function(data){
+                if(data.result == "success"){
+                    console.log(data.src)
+                    // document.getElementById("id_cancel").click()
+                    $(".cropper-container").hide();
+                    $("#id_profile_image_display")[0].src = data.src;
+                    $("#id_profile_image_display")[0].classList.remove("cropper-hidden");
+                    enableImageOverlay()
+                }
+                else if(data.result == "error"){
+                    document.getElementById("id_cancel").click()
+                }
+            },
+            error: function(data){
+                console.error('something went wrong')
+                console.log(data.result)
+                console.log(data.exception)
+            },
+            complete: function(data){
+                profileLoadingSpinner(false)
+            }
+        })
+    }
+    function deleteAccount(){
+        let confirmation = confirm("You are about to delete this account, press OK to confirm");
+        if(confirmation){
+            window.location.href="{% url 'delete_account' account.id %}";
+        }
+    }
+    function uppercase(inputID){
+        let str = $("#" + inputID)[0].value;
+        output = str.substring(0, 1).toUpperCase() + str.substring(1);
+        $("#" + inputID)[0].value = output;
+    }
+
+    // Address Handler
+    function initMap() {
+        const componentForm = [
+            'location',
+        ];
+        const autocompleteInput = document.getElementById('id_address');
+        const autocomplete = new google.maps.places.Autocomplete(autocompleteInput, {
+            fields: ["address_components", "geometry", "name"],
+            types: ["address"],
+        });
+        autocomplete.setComponentRestrictions({
+            country: ["AU"],
+        });
+        autocomplete.addListener('place_changed', function () {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+                showMessage('alert-error','Please select an address from the dropdown list.')
+                // User entered the name of a Place that was not suggested and
+                // pressed the Enter key, or the Place Details request failed.
+                // window.alert('No details available for input: \'' + place.name + '\'');
+                return;
+            }
+            fillInAddress(place);
+        });
+        function fillInAddress(place) {  // optional parameter
+            const addressNameFormat = {
+                'street_number': 'long_name',
+                'route': 'short_name',
+                'locality': 'long_name',
+                'administrative_area_level_1': 'short_name',
+                'postal_code': 'short_name',
+                'country': 'long_name',
+            };
+            const getAddressComp = function (type) {
+                for (const component of place.address_components) {
+                    if (component.types[0] === type) {
+                        return component[addressNameFormat[type]];
+                    }
+                }
+            return '';
+            };
+            document.getElementById('id_address').value = getAddressComp('street_number') + ' ' + getAddressComp('route') + ' ' + getAddressComp('locality') + ' ' + getAddressComp('administrative_area_level_1') + ' ' + getAddressComp('postal_code') + ' ' + getAddressComp('country');
+            $("#account_house_no")[0].value = getAddressComp('street_number')
+            $("#account_street")[0].value = getAddressComp('route')
+            $("#account_suburb")[0].value = getAddressComp('locality')
+            $("#account_state")[0].value = getAddressComp('administrative_area_level_1')
+            $("#account_postcode")[0].value = getAddressComp('postal_code')
+            $("#account_country")[0].value = getAddressComp('country')
+            for (const component of componentForm) {
+                // Location field is handled separately above as it has different logic.
+                if (component !== 'location') {
+                    document.getElementById(component).value = getAddressComp(component);
+                }
+            }
+        }
+    }
+
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAYfuloZYC7wvMrfRxdmec2lRbwfSDZVP0&libraries=places&callback=initMap&solution_channel=GMP_QB_addressselection_v1_cA" async defer></script>
+
+
+{% endblock %}

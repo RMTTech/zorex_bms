@@ -1,0 +1,399 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+<h2 class="text-center m-2" style="color: #6001fb;">Plans Dashboard
+    <div class="d-flex invoicing-seachbar">
+        <input class="form-control me-2" type="search" id="searchPlanInput" placeholder="Search Plans" onkeyup="filterTable()">
+        <button class="btn btn-primary" onclick="filterTable()">Search</button>
+    </div>
+</h2>
+<div class="m-1 position-relative">
+    <div class="card shadow bg-light table-responsive" style="min-height: 50vh; max-height: 80vh;">
+        <table class="table table-striped fs-8 table-bordered table-sm" id="plans_table">
+            <thead>
+                <tr>
+                    <th scope="col" style="min-width: 20px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(0)">ID</span></th>
+                    <th scope="col" style="min-width: 100px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(1)">Name</span></th>
+                    <th scope="col" style="min-width: 150px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(2)">Description</span></th>
+                    <th scope="col" style="min-width: 100px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(3)">Product ID</span></th>
+                    <th scope="col" style="min-width: 100px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(4)">Paypal Plan ID</span></th>
+                    <th scope="col" style="min-width: 60px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(5)">Status</span></th>
+                    <th scope="col" style="min-width: 60px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(6)">Frequency</span></th>
+                    <th scope="col" style="min-width: 20px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(7)">Failed Payment</span></th>
+                    <th scope="col" style="min-width: 60px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(8)">Tenure Type</span></th>
+                    <th scope="col" style="min-width: 30px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(9)">Tax Rate</span></th>
+                    <th scope="col" style="min-width: 50px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(10)">Tax Inclusive</span></th>
+                    <th scope="col" style="min-width: 50px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(11)">allowed sms</span></th>
+                    <th scope="col" style="min-width: 50px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(12)">allowed accounts</span></th>
+                    <th scope="col" style="min-width: 50px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(13)">allowed storage</span></th>
+                    <th scope="col" style="min-width: 50px; vertical-align: middle;"><span class="d-block" role="button" onclick="sortTable(14)">Active Subscriptions</span></th>
+                    <th scope="col" style="width: 75px; vertical-align: middle;"><button role="button" class="btn btn-sm btn-success fs-8" onclick="addPlanWindow(true)">+ Plan</button></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in plans %}
+                <tr id="id_row{{plan.id}}">
+                    <td><span id="id_id{{plan.id}}">{{plan.id}}</span></td>
+                    <td><span id="id_name{{plan.id}}">{{plan.name}}</span></td>
+                    <td><span id="id_description{{plan.id}}">{{plan.description}}</span></td>
+                    <td><span id="id_prod_id{{plan.id}}">{{plan.prod_id}}</span></td>
+                    <td><span id="id_plan_id{{plan.id}}">{{plan.plan_id}}</span></td>
+                    <td><span id="id_Status{{plan.id}}">{{plan.status}}</span></td>
+                    <td><span id="id_frequency_unit{{plan.id}}">{{plan.frequency_unit}}</span></td>
+                    <td><span id="id_frequency_count{{plan.id}}">{{plan.payment_failure_threshold}}</span></td>
+                    <td><span id="id_tenure_type{{plan.id}}">{{plan.tenure_type}}</span></td>
+                    <td><span id="id_tax_rate{{plan.id}}">{{plan.tax_rate}}</span></td>
+                    <td><span id="id_tax_inclusive{{plan.id}}">{{plan.tax_inclusive}}</span></td>
+                    <td><span id="id_allowed_sms{{plan.id}}">{{plan.allowed_sms}}</span></td>
+                    <td><span id="id_allowed_accounts{{plan.id}}">{{plan.allowed_accounts}}</span></td>
+                    <td><span id="id_allowed_storage{{plan.id}}">{{plan.allowed_storage}}GB</span></td>
+                    <td><span id="id_allowed_storage{{plan.id}}">{{plan.subs.count}}</span></td>
+                    <td>
+                        {%if plan.status == "ACTIVE"%}
+                        <button id="id_edit_button{{plan.id}}" class="btn btn-sm btn-warning" onclick="updatePlan({{plan.id}},'deactivate')">Deactivate</button>
+                        {%else%}
+                        <button id="id_edit_button{{plan.id}}" class="btn btn-sm btn-primary" onclick="updatePlan({{plan.id}},'activate')">Activate</button>
+                        {%endif%}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<div id="id_add_plan_window" class="modal backdrop index-3">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto" id="id_modal_title">Create Plan</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close" onclick="addPlanWindow(false)"></button>
+            </div>
+            <form method="post" class="card-body p-4">{% csrf_token %}
+                <div class="col-12">
+                    <label for="id_name">Plan Name</label>
+                    <input type="text" name="name" class="form-control  form-control-sm" id="id_name" placeholder="Plan Name" required>
+                </div>
+                <div class="col-12">
+                    <label for="id_description">Plan Description</label>
+                    <input type="text" name="description" class="form-control form-control-sm" id="id_description" placeholder="Plan Description" required>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label for="id_product_id">Product ID</label>
+                        <input type="text" name="product_id" class="form-control form-control-sm" id="id_product_id" placeholder="Product ID" required value="Zorex_BMS">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="id_status">Status</label>
+                        <select id="id_status" name="status" class="form-select form-select-sm" aria-label=".form-select-sm" required>
+                            <option value="ACTIVE" selected>ACTIVE</option>
+                            <option value="CREATED">CREATED</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm">
+                        <label for="id_fixed_price_value">Fixed Price Value</label>
+                        <input type="text" name="fixed_price_value" class="form-control form-control-sm" id="id_fixed_price_value" placeholder="Fixed Price Value" required>
+                    </div>
+                    <div class="col-sm">
+                        <label for="id_fixed_price_currency">Fixed Price Currency</label>
+                        <input type="text" name="fixed_price_currency" class="form-control form-control-sm" id="id_fixed_price_currency" placeholder="Fixed Price Currency" required value="AUD">
+                    </div>
+                </div>
+                <hr class="my-2">
+                <div class="text-center">Frequency</div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label for="id_frequency_count">Number of times</label>
+                        <input type="number" name="frequency_count" class="form-control form-control-sm" id="id_frequency_count" placeholder="Frequency Number of times" required value="1">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="id_frequency_unit">Every</label>
+                        <select id="id_frequency_unit" name="frequency_unit" class="form-select form-select-sm" aria-label=".form-select-sm" required>
+                            <option value="DAY">DAY</option>
+                            <option value="WEEK">WEEK</option>
+                            <option value="MONTH" selected>MONTH</option>
+                            <option value="YEAR">YEAR</option>
+                        </select>
+                    </div>
+                </div>
+                <hr class="my-2">
+                <div class="text-center">Limits</div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label for="id_allowed_accounts">Allowed accounts</label>
+                        <input type="number" name="allowed_accounts" class="form-control form-control-sm" id="id_allowed_accounts" placeholder="Number of allowed Accounts" required value="1">
+                    </div>
+                    <div class="col-sm-4">
+                        <label for="id_allowed_sms">Allowed messages</label>
+                        <input type="number" name="allowed_sms" class="form-control form-control-sm" id="id_allowed_sms" placeholder="Number of allowed Messages" required value="100">
+                    </div>
+                    <div class="col-sm-4">
+                        <label for="id_allowed_storage">Allowed Storage</label>
+                        <input type="text" name="allowed_storage" class="form-control form-control-sm" id="id_allowed_storage" placeholder="Space of allowed Storage" required value="1">
+                    </div>
+                </div>
+                <hr class="my-2">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label for="id_payment_failure_threshold">Payment Failure Threshold</label>
+                        <input type="number" name="payment_failure_threshold" class="form-control form-control-sm" id="id_payment_failure_threshold" placeholder="Payment Failure Threshold" required value="0">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="id_tenure_type">Tenure Type</label>
+                        <select id="id_tenure_type" name="tenure_type" class="form-select form-select-sm" aria-label=".form-select-sm" required>
+                            <option value="TRIAL">TRIAL</option>
+                            <option value="REGULAR" selected>REGULAR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="id_tax_rate">Tax Rate %</label>
+                    <input type="text" name="tax_rate" class="form-control form-control-sm" id="id_tax_rate" placeholder="Fixed Price Currency" required value="10">
+                </div>
+                <div class="form-check my-3">
+                    <input class="form-check-input" type="checkbox" id="id_tax_inclusive" name="tax_inclusive" checked required>
+                    <label class="form-check-label" for="id_tax_inclusive">Tax Included in Price</label>
+                </div>
+                <div class="col-12 text-center">
+                    <button role="button" type="submit" class="btn btn-sm btn-primary">Create Plan</button> 
+                    <a role="button" type="button" class="btn btn-sm btn-danger" onclick="addPlanWindow(false)">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="d-block text-center my-3">
+    <button class="btn btn-sm btn-primary m-auto" onclick="capturePayment()">Capture Payment</button>
+    <button class="btn btn-sm btn-success fs-8" onclick="addPlanWindow(true)">Create Plan</button>
+</div>
+<div id="id_loading_spinner" class="backdrop modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    function addPlanWindow(status){
+        if (status){
+            $("#id_add_plan_window").animate({height:"toggle"}, 250)
+        }
+        else{
+            $("#id_add_plan_window").hide(250)
+        }
+    }
+    function sortTable(n) {
+        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        table = document.getElementById("plans_table");
+        switching = true;
+        dir = "asc";
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+                if (dir == "asc") {
+                    if ( n == 0 ) {
+                        if (x.innerText.slice(x.innerText.length-4) > y.innerText.slice(y.innerText.length-4)) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }else if ( n == 3 || n == 4 ){
+                        if (parseFloat(x.innerText.slice(2)) > parseFloat(y.innerText.slice(2))) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }else if ( n == 5 ){
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }else{
+                        if (x.innerText.toLowerCase() > y.innerText.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                } else if (dir == "desc") {
+                    if ( n == 0 ) {
+                        if (x.innerText.slice(x.innerText.length-4) < y.innerText.slice(y.innerText.length-4)) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }else if ( n == 3 || n == 4 ){
+                        if (parseFloat(x.innerText.slice(2)) < parseFloat(y.innerText.slice(2))) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }else if ( n == 5 ){
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }else{
+                        if (x.innerText.toLowerCase() < y.innerText.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount ++;
+            } else {
+                if (switchcount == 0 && dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+
+    const invTable = document.getElementById("plans_table");
+    resizableGrid(invTable)
+    function resizableGrid(table) {
+        var row = table.getElementsByTagName('tr')[0],
+        cols = row ? row.children : undefined;
+        if (!cols) return;
+        for (var i=0;i<cols.length;i++){
+            var div = createDiv(table.offsetHeight);
+            cols[i].appendChild(div);
+            cols[i].style.position = 'relative';
+            setListeners(div);
+        }
+    }
+    function createDiv(height){
+        var div = document.createElement('div');
+        div.style.top = 0;
+        div.style.right = 0;
+        div.style.width = '5px';
+        div.style.position = 'absolute';
+        div.style.cursor = 'col-resize';
+        /* remove backGroundColor later */
+        // div.style.backgroundColor = 'red';
+        div.style.userSelect = 'none';
+        /* table height */
+        div.style.height = height+'px';
+        return div;
+    }
+    function setListeners(div){
+        var pageX,curCol,nxtCol,curColWidth,nxtColWidth;
+        div.addEventListener('mousedown', function (e) {
+            curCol = e.target.parentElement;
+            nxtCol = curCol.nextElementSibling;
+            pageX = e.pageX;
+            curColWidth = curCol.offsetWidth
+            if (nxtCol)
+                nxtColWidth = nxtCol.offsetWidth
+        });
+
+        document.addEventListener('mousemove', function (e) {
+        if (curCol) {
+            var diffX = e.pageX - pageX;
+
+            if (nxtCol)
+                nxtCol.style.width = (nxtColWidth - (diffX))+'px';
+
+            curCol.style.width = (curColWidth + diffX)+'px';
+            }
+        });
+
+        document.addEventListener('mouseup', function (e) { 
+            curCol = undefined;
+            nxtCol = undefined;
+            pageX = undefined;
+            nxtColWidth = undefined;
+            curColWidth = undefined;
+        });
+    }
+    
+    function updatePlan(planID, action){
+        displayLoadingSpinner(true)
+        payload = {
+            planid : planID,
+            action: action,
+        }
+        $.ajax({
+            type: 'DELETE',
+            datatype: 'json',
+            url: "{% url 'plans' %}",
+            data: payload,
+            headers: {"X-CSRFToken": '{{ csrf_token }}'},
+            success: function(data){
+                if(data.result == "success"){
+                    window.location.reload();
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(data){
+                displayLoadingSpinner(false)
+            },
+        })
+    }
+    function capturePayment(){
+        displayLoadingSpinner(true)
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            note: "Capturing Monthly Payment",
+        }
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'subscription_capture' %}",
+            data: payload,
+            success: function(data){
+                if(data.result == "success"){
+                    // window.location.reload();
+                    console.log(data)
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+            },
+            complete: function(data){
+                displayLoadingSpinner(false)
+            },
+        })
+    }
+
+    function filterTable(){
+        let searchInput = document.getElementById("searchPlanInput").value;
+        table = document.getElementById("plans_table");
+        rows = table.rows;
+        for (i=1;i<rows.length;i++){
+            x = rows[i].getElementsByTagName("span")[2].innerText.toLowerCase()
+            // console.log(x)
+            if (x.includes(searchInput.toLowerCase())){
+                rows[i].classList.remove("d-none");
+            }else{
+                rows[i].classList.add("d-none");
+            }
+        }
+    }
+</script>
+{% endblock %}

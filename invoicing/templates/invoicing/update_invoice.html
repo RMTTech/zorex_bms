@@ -1,0 +1,1115 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+<form action="." method="POST"  enctype="multipart/form-data">{% csrf_token %}
+    <div id="id_displayed_area" class="container p-2 mw-1400px mt-1">
+        <div class="d-flex justify-content-around flex-wrap">
+            <div id="id_customer_details" class="card shadow bg-light mb-2 mobilecard">
+                <div class="card-header bg-dark page-header">
+                    <h4 class="card-title text-center m-auto">Customer Details</h4>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Name:</td>
+                                <input type="text" class="d-none" name="customer_id" value="{{customer.id}}">
+                                <td><a class="btn-link" href="{% url 'customer_dashboard' customer.id %}">{{customer.name}}</a></td>
+                            </tr>
+                            <tr>
+                                <td>Email:</td>
+                                <td><a href="mailto:{{customer.email}}">{{customer.email}}</a></td>
+                            </tr>
+                            <tr>
+                                <td>Number:</td>
+                                <td><a href="tel:{{customer.number}}">{{customer.number}}</a></td>
+                            </tr>
+                            <tr>
+                                <td>Address:</td>
+                                <td><a target="_blank" href="http://maps.google.com/?q={{customer.address}}">{{customer.address}}</a></td>
+                            </tr>
+                            <tr>
+                                <td>Business:</td>
+                                <td>{% if customer.business_name %}{{customer.business_name}}{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <td>ABN/ACN:</td>
+                                <td>{% if customer.business_abn %}{{customer.business_abn}}{% endif %}</td>
+                            </tr>
+                        </tbody>
+                    </table><hr>
+                    <h5 class="text-center">Note on invoice</h5>
+                    <textarea name="note" id="id_invoice_note" class="form-control minh-100px">{{invoice.note}}</textarea>
+                </div>
+            </div>
+            
+            <div id="id_account_details" class="card shadow bg-light mb-2 mobilecard">
+                <div class="card-header bg-dark page-header">
+                    <h4 class="card-title text-center m-auto">Account Details</h4>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Name:</td>
+                                <input type="text" class="d-none" name="account_id" value="{{invoice.parent.id}}">
+                                <td>{{invoice.parent.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>Business:</td>
+                                <td>{{invoice.parent.business.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>ABN:</td>
+                                <td>{{invoice.parent.business.abn}}</td>
+                            </tr>
+                            <tr>
+                                <td>License No:</td>
+                                <td>{{invoice.parent.business.license_number}}</td>
+                            </tr>
+                            <tr>
+                                <td>GST Registered:</td>
+                                <td class="text-center">{%if invoice.parent.business.gst_registered%}Yes{%else%}No{%endif%}</td>
+                            </tr>
+                            <tr>
+                                <td>Logo:</td>
+                                <td class="text-center"><img style="width: 50px;" src="{{invoice.parent.business.logo.url}}"></td>
+                            </tr>
+                            <tr>
+                                <td>BSB:</td>
+                                <td>{{invoice.parent.business.bsb}}</td>
+                            </tr>
+                            <tr>
+                                <td>Account No:</td>
+                                <td>{{invoice.parent.business.account_number}}</td>
+                            </tr>
+                            {%if invoice.parent.conf.invoice_footer != ""%}
+                            <tr>
+                                <td>Terms & Conditions</td>
+                                <td>{{invoice.parent.conf.invoice_footer}}</td>
+                            </tr>
+                            {%endif%}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="id_quotes_and_invoices" class="card shadow bg-light mb-2 mobilecard">
+                <div class="card-header bg-dark page-header">
+                    <h4 class="card-title text-center m-auto">{{invoice.title}} {{invoice.invoice_no}} Details</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <input type="text" class="d-none" name="invoice_id" id="id_invoice_id" value="{{invoice.id}}">
+                        <label for="id_title">Title:<span style="color: red;">*</span></label>
+                        <select name="title" id="id_title" class="form-control" aria-label="Select" required>
+                            <option value="">------</option>
+                            <option value="Quote" {% if invoice.title == "Quote" %}selected{% endif %}>Quote {{invoice.invoice_no}}</option>
+                            <option value="Invoice" {% if invoice.title == "Invoice" %}selected{% endif %}>Invoice {{invoice.invoice_no}}</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="id_invoice_date">Date:<span style="color: red;">*</span></label>
+                        <input class="form-control" type="date" name="invoice_date" id="id_invoice_date" required {% if invoice.invoice_date %}value="{{invoice.invoice_date|date:"Y-m-d"}}"{% endif %}>
+                    </div>
+                    <div class="mb-2">
+                        <label for="id_due_date">Due Date:<span style="color: red;">*</span></label>
+                        <input onblur="checkDate()" class="form-control" type="date" name="due_date" id="id_due_date" required {% if invoice.due_date %}value="{{invoice.due_date|date:"Y-m-d"}}"{% endif %}>
+                    </div>
+                    <div class="mb-2">
+                        <label for="id_payment_method">Payment Method:<span style="color: red;">*</span></label>
+                        <select class="form-control" name="payment_method" id="id_payment_method" aria-label="Select" required>
+                            <option value="">------</option>
+                            <option value="BANK_TRANSFER" {% if invoice.payment_method == "BANK_TRANSFER" %}selected{% endif %}>Bank Transfer</option>
+                            <option value="CASH" {% if invoice.payment_method == "CASH" %}selected{% endif %}>Cash</option>
+                            <option value="CASH_ON_DELIVERY" {% if invoice.payment_method == "CASH_ON_DELIVERY" %}selected{% endif %}>Cash On Delivery</option>
+                            <option value="EFTPOS" {% if invoice.payment_method == "EFTPOS" %}selected{% endif %}>EFTPOS</option>
+                            <option value="PAYPAL" {% if invoice.payment_method == "PAYPAL" %}selected{% endif %}>PAYPAL</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="invoice_product_details" class="overflow-auto">
+                <div class="container p-0 mw-1200px mb-2">
+                    <div class="card shadow bg-light table-responsive">
+                        <table id="id_products_table" class="table fs-7 table-bordered table-sm">
+                            <thead class="card-header bg-dark page-header bg-dark page-header">
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col" style="min-width: 180px; width: 180px;">Product/Service</th>
+                                    <th scope="col" style="min-width: 250px; width: 250px;">Description</th>
+                                    <th scope="col" style="min-width: 70px; width: 75px;">QTY</th>
+                                    <th scope="col" style="min-width: 100px; width: 110px;">Price</th>
+                                    <th scope="col" style="min-width: 120px; width: 130px;">Sub Total</th>
+                                    <th class="m-0 p-0"><img class="id_add_row pointer px-2 py-2" src="/static/invoicing/images/plus.svg" onclick="addRow()"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if products %}
+                                {% for product in products %}
+                                <tr class="v-align-middle">
+                                    <td class="text-center"><input class="d-none" type="text" name="product_id{{forloop.counter}}" id="id_product_id{{forloop.counter}}" value="{{product.id}}">{{forloop.counter}}</td>
+                                    <td><input class="form-control form-control-sm" type="text" onfocus="productlist_searchbar({{forloop.counter}})" onkeyup="productlist_search_products({{forloop.counter}})" onblur="productlist_search_list_blur({{forloop.counter}})" name="product_title{{forloop.counter}}" id="id_product_title{{forloop.counter}}" value="{{product.product_title}}">
+                                        <div class="d-inline-block position-absolute mh-200px overflow-auto rounded"><ul class="list-group d-none" id="productlist_search_list{{forloop.counter}}"><li class="btn-sm btn-primary index-2" role="button" onclick="showaddproductwindow({{forloop.counter}})">Add New Product</li></ul></div>
+                                    </td>
+                                    <td><input class="form-control form-control-sm" type="text" onfocus="productlist_searchbar_d({{forloop.counter}})" onkeyup="productlist_search_products_d({{forloop.counter}})" onblur="productlist_search_list_blur_d({{forloop.counter}})" name="product_description{{forloop.counter}}" id="id_product_description{{forloop.counter}}" value="{{product.product_description}}">
+                                        <div class="d-inline-block position-absolute mh-200px overflow-auto rounded"><ul class="list-group d-none" id="productlist_description_list{{forloop.counter}}" style="display: block;"><li class="btn-sm btn-primary index-2" role="button" onclick="showaddproductwindow_d({{forloop.counter}})">Add New Product</li></ul></div>
+                                    </td>
+                                    <td><input class="form-control form-control-sm" type="text" name="quantity{{forloop.counter}}" id="id_quantity{{forloop.counter}}" onblur="Total({{forloop.counter}})" value="{{product.quantity}}"></td>
+                                    <td><input class="form-control form-control-sm" type="text" name="price{{forloop.counter}}" id="id_price{{forloop.counter}}" onblur="Total({{forloop.counter}})" value="{{product.price}}"></td>
+                                    <td><input class="form-control form-control-sm" type="text" name="product_total{{forloop.counter}}" id="id_product_total{{forloop.counter}}" onchange="$(this).val(parseFloat($(this).val()).toFixed(2))" onblur="Total({{forloop.counter}})" value="{{product.total}}"></td>
+                                    <td class="m-0 p-0">
+                                        <img class="id_delete_row pointer px-2 py-3" name="add_delete_row{{forloop.counter}}" id="id_delete_row{{forloop.counter}}" src="/static/invoicing/images/delete.svg" onclick="deleteRow({{forloop.counter}})">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                                <tr>
+                                    <td class="no-border"></td>
+                                    <td class="no-border"></td>
+                                    <td class="no-border"></td>
+                                    <td class="no-border"></td>
+                                    <td class="text-center">Sub Total:</td>
+                                    <td class="text-center">$ <span id="id_sub_total"></span><input class="d-none" name="sub_total" id="id_sub_total_input"></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td class="no-border"></td>
+                                    <td class="no-border">Amount Received:</td>
+                                    <td class="no-border"><input class="form-control form-control-sm" name="amount_received" id="id_amount_received" onblur="updateTotalValue()" onchange="if($(this).val() !== ''){$(this).val(parseFloat($(this).val()).toFixed(2))}" value="{{invoice.amount_received}}"></td>
+                                    <td class="no-border"><a role="button" class="btn btn-success btn-sm" onclick="paidInFull()">Paid</a></td>
+                                    <td class="text-center">GST:</td>
+                                    <td class="text-center">$ <span id="id_total_gst"></span><input class="d-none" name="total_gst" id="id_total_gst_input"></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="no-border"></td>
+                                    <td class="no-border">Balance Due:</td>
+                                    <td class="no-border">$ <span id="id_balance_due"></span><input class="d-none" name="balance_due" id="id_balance_due_input"></td>
+                                    <td class="no-border"></td>
+                                    <td class="text-center">Total:</td>
+                                    <td class="text-center">$ <span id="id_total_value"></span><input class="d-none" name="total_value" id="id_total_value_input"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="id_attachments" class="card shadow bg-light mb-2 mobilecard">
+                <div style="position: absolute; width: 100%; height: 100%;" id="upload_spinner" class="backdrop index-4 modal" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-header bg-dark page-header">
+                    <h4 class="card-title text-center m-auto">Attachments</h4>
+                </div>
+                <div class="card-body" style="max-height: 630px; overflow: hidden;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show_attachments" name="show_attachments" {% if invoice.show_attachments == True %} checked {% endif %}>
+                        <label class="form-check-label" for="flexCheckDefault">
+                            Show Attachments on Invoice
+                        </label>
+                    </div>
+                    <div class="input-group mb-3 my-2">
+                        <input class="form-control form-control-sm" id="formFileSm" name="FILES" type="file" onchange="readURL(this)" multiple>
+                        <a class="btn btn-success btn-sm" type="button" id="id_upload_all" onclick="uploadAll()">Upload All</a>
+                    </div>
+                    <div style="max-height: 400px; overflow: auto;">
+                        <table class="table fs-7 table-bordered text-center align-middle table-sm">
+                            <tbody id="attachment_table">
+                                {% for attachment in invoice.attachments.all %}
+                                <tr id="attachment_row{{attachment.id}}">
+                                    {% if "pdf" in attachment.file.url %}
+                                    <td class="p-0"><a target="_blank" href="{{attachment.file.url}}"><embed width="50px" height="50px" name="plugin" src="{{attachment.file.url}}" type="application/pdf"></a></td>
+                                    {% else %}
+                                    <td class="p-0"><a target="_blank" href="{{attachment.file.url}}"><img src="{{attachment.file.url}}" alt="" class="rounded-3 mw-50px d-inline"></a></td>
+                                    {% endif %}
+                                    <td class="p-0 fs-8">
+                                        <a target="_blank" href="{{attachment.file.url}}" style="word-break: break-all;">{{attachment.filename}}</a><br>
+                                        {{attachment.date_created|date:"d M Y g:i A"}} {{attachment.filesize}} MB
+                                        
+                                    </td>
+                                    <td><a class="btn btn-sm btn-danger" onclick="deleteAttachment({{attachment.id}})">Del</a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a role="button" class="btn btn-sm btn-primary m-1" onclick="viewAll({{invoice.id}})">View All</a>
+                    <a role="button" class="btn btn-sm btn-secondary m-1" onclick="downloadAll({{invoice.id}})">Download All</a>
+                </div>
+            </div>
+        </div>
+        <div class="text-center m-4">
+            <button type="submit" name="save" value="save_and_send" class="btn btn-primary" onclick="updateTotalValue()">Save & Send</button>
+            <button type="submit" name="save" value="save" class="btn btn-success" onclick="updateTotalValue()">Save</button>
+            <a role="button" class="btn btn-danger" onclick="confirm_delete_window(true)">Delete</a>
+            <button type="button" class="btn btn-dark" onclick="window.history.back();">Back</button>
+        </div>
+    </div>
+</form>
+
+<div id="add_new_product_window" class="modal backdrop index-2">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto" id="id_modal_title">Add New Product</h5>
+                <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Close" onclick="hideaddproductwindow()"></button>
+            </div>
+            <form class="card-body p-4" onsubmit="return addNewProduct()">
+                <div class="modal-body">
+                    <input type="text" name="rowCount" id="id_rowCount" class="d-none">
+                    <input type="text" name="product_id" id="product_id" class="d-none">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                        <span class="input-group-text" style="width: 160px;">Product Title</span>
+                        </div>
+                        <input id="product_title" name="product_title" type="text" class="form-control" required>
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" style="width: 160px;">Product Description</span>
+                        </div>
+                        <textarea id="product_description" name="product_description" class="form-control" required></textarea>
+                    </div>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                        <span class="input-group-text" style="width: 126px;">Unit Price</span>
+                        </div>
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <input id="price" name="price" type="number" step="0.01" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer d-block text-center">
+                    <button class="btn btn-primary" id="id_confirmation_window_confirm" type="submit">Add</button>
+                    <a class="btn btn-danger" id="id_confirmation_window_cancel1" type="button" onclick="hideaddproductwindow()">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="id_loading_spinner" class="backdrop modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<div id="confirm_delete" class="modal backdrop index-2">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header p-2">
+                <h5 class="modal-title mx-auto" id="id_modal_title">Confirmation Window</h5>
+                <button class="btn btn-danger p-x" onclick="confirm_delete_window(false)">
+                    <span class="fs-4">&times;</span>
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <div class="col-md-12">
+                    Are you Sure you want to Delete this {{invoice.title}}
+                </div>
+                <div class="col-12 text-center mt-4">
+                    <button role="button" type="submit" class="btn btn-sm btn-primary" onclick="invoiceDeleteFunc({{invoice.id}})">Confirm</button> 
+                    <a role="button" type="button" class="btn btn-sm btn-danger" onclick="confirm_delete_window(false)">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+const productsTable = document.getElementById('id_products_table');
+function addRow() {
+    var rowCount = productsTable.rows.length - 3;
+    var row = productsTable.insertRow(rowCount);
+    row.classList = "v-align-middle";
+    var cell1 = row.insertCell(0);
+    var cell2 = row.insertCell(1);
+    var cell3 = row.insertCell(2);
+    var cell4 = row.insertCell(3);
+    var cell5 = row.insertCell(4);
+    var cell7 = row.insertCell(5);
+    var cell8 = row.insertCell(6);
+    cell1.innerHTML = rowCount;
+    cell1.classList.add('text-center')
+
+    var element1 = document.createElement("input");
+    element1.classList = "d-none";
+    element1.type = "text";
+    element1.name = "product_id" + rowCount;
+    element1.id = "id_product_id" + rowCount;
+    // element1.value = rowCount;
+    cell1.appendChild(element1);
+
+    var element2 = document.createElement("input");
+    element2.classList = "form-control form-control-sm";
+    element2.type = "text";
+    element2.name = "product_title" + rowCount;
+    element2.id = "id_product_title" + rowCount;
+    element2.setAttribute('onfocus','productlist_searchbar('+ rowCount +')');
+    element2.setAttribute('onkeyup','productlist_search_products('+ rowCount +')');
+    element2.setAttribute('onblur','productlist_search_list_blur('+ rowCount +')');
+    cell2.appendChild(element2);
+
+    var element21 = document.createElement("div");
+    element21.classList = "d-inline-block position-absolute mh-200px overflow-auto rounded";
+    
+    var element22 = document.createElement("ul");
+    element22.classList = "list-group d-none";
+    element22.id = "productlist_search_list" + rowCount;
+    
+    var element23 = document.createElement("li");
+    element23.classList = "btn-sm btn-primary index-2";
+    element23.setAttribute('role','button')
+    element23.setAttribute('onclick','showaddproductwindow(' + rowCount + ')');
+    element23.innerText = "Add New Product";
+    element22.appendChild(element23);
+    element21.appendChild(element22);
+    cell2.appendChild(element21);
+
+    var element3 = document.createElement("input");
+    element3.classList = "form-control form-control-sm";
+    element3.type = "text";
+    element3.name = "product_description" + rowCount;
+    element3.id = "id_product_description" + rowCount;
+    element3.setAttribute('onfocus','productlist_searchbar_d('+ rowCount +')');
+    element3.setAttribute('onkeyup','productlist_search_products_d('+ rowCount +')');
+    element3.setAttribute('onblur','productlist_search_list_blur_d('+ rowCount +')');
+    cell3.appendChild(element3);
+
+    var element31 = document.createElement("div");
+    element31.classList = "d-inline-block position-absolute mh-200px overflow-auto rounded";
+    
+    var element32 = document.createElement("ul");
+    element32.classList = "list-group d-none";
+    element32.id = "productlist_description_list" + rowCount;
+    
+    var element33 = document.createElement("li");
+    element33.classList = "btn-sm btn-primary index-2";
+    element33.setAttribute('role','button')
+    element33.setAttribute('onclick','showaddproductwindow(' + rowCount + ')');
+    element33.innerText = "Add New Product";
+    element32.appendChild(element33);
+    element31.appendChild(element32);
+    cell3.appendChild(element31);
+
+    var element4 = document.createElement("input");
+    element4.classList = "form-control form-control-sm";
+    element4.type = "text";
+    element4.name = "quantity" + rowCount;
+    element4.id = "id_quantity" + rowCount;
+    att41 = document.createAttribute("onblur");
+    att41.value = "Total(" + rowCount + ")";
+    element4.setAttributeNode(att41);
+    cell4.appendChild(element4);
+
+    var element5 = document.createElement("input");
+    element5.classList = "form-control form-control-sm";
+    element5.type = "text";
+    element5.name = "price" + rowCount;
+    element5.id = "id_price" + rowCount;
+    att51 = document.createAttribute("onblur");
+    att51.value = "Total(" + rowCount + ")";
+    element5.setAttributeNode(att51);
+    cell5.appendChild(element5);
+
+    var element7 = document.createElement("input");
+    element7.classList = "form-control form-control-sm";
+    element7.type = "text";
+    element7.name = "product_total" + rowCount;
+    element7.id = "id_product_total" + rowCount;
+    att7 = document.createAttribute("onchange");
+    att7.value = "$(this).val(parseFloat($(this).val()).toFixed(2))";
+    element7.setAttributeNode(att7);
+    att71 = document.createAttribute("onblur");
+    att71.value = "Total(" + rowCount + ")";
+    element7.setAttributeNode(att71);
+    cell7.appendChild(element7);
+
+    var element8 = document.createElement("img");
+    element8.classList = "id_delete_row pointer px-2 py-3";
+    element8.type = "text";
+    element8.name = "add_delete_row" + rowCount;
+    element8.id = "id_delete_row" + rowCount;
+    element8.src = "{% static 'invoicing/images/delete.svg' %}";
+    att8 = document.createAttribute("onclick");
+    att8.value = "deleteRow(" + rowCount + ")";
+    element8.setAttributeNode(att8);
+    cell8.classList = "p-0 m-0"
+    cell8.appendChild(element8);
+}
+function deleteRow(rowNumber) {
+    var productToDelete = document.getElementById("id_product_id" + rowNumber).value
+    if(productToDelete){
+        productData = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            product_id: productToDelete,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'delete_product' %}",
+            data: productData,
+            success: function(data){
+                if(data.result == "success"){
+                    showMessage('alert-success', "Product removed successfully");
+                    document.getElementById("id_product_id" + rowNumber).value = null
+                    document.getElementById("id_product_title" + rowNumber).value = null
+                    document.getElementById("id_product_description" + rowNumber).value = null
+                    document.getElementById("id_quantity" + rowNumber).value = null
+                    document.getElementById("id_price" + rowNumber).value = null
+                    document.getElementById("id_product_total" + rowNumber).value = null
+                    document.querySelectorAll("#id_products_table tr")[rowNumber].classList.add('d-none');
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', "Something went wrong, please contact the system admin !");
+                }
+            },
+            error: function(data){
+                showMessage('alert-error', "Please check your internet connection and try again!");
+                window.location.reload();
+            },
+            complete: function(data){
+                updateTotalValue();
+            },
+        })
+    }
+    else{
+        document.getElementById("id_product_id" + rowNumber).value = null
+        document.getElementById("id_product_title" + rowNumber).value = null
+        document.getElementById("id_product_description" + rowNumber).value = null
+        document.getElementById("id_quantity" + rowNumber).value = null
+        document.getElementById("id_price" + rowNumber).value = null
+        document.getElementById("id_product_total" + rowNumber).value = null
+        document.querySelectorAll("#id_products_table tr")[rowNumber].classList.add('d-none');
+        updateTotalValue();
+    }
+}
+
+resizableGrid(productsTable)
+
+function resizableGrid(table) {
+    var row = table.getElementsByTagName('tr')[0],
+    cols = row ? row.children : undefined;
+    if (!cols) return;
+    for (var i=0;i<cols.length;i++){
+        var div = createDiv(table.offsetHeight);
+        cols[i].appendChild(div);
+        cols[i].style.position = 'relative';
+        setListeners(div);
+    }
+}
+function createDiv(height){
+    var div = document.createElement('div');
+    div.style.top = 0;
+    div.style.right = 0;
+    div.style.width = '5px';
+    div.style.position = 'absolute';
+    div.style.cursor = 'col-resize';
+    /* remove backGroundColor later */
+    // div.style.backgroundColor = 'red';
+    div.style.userSelect = 'none';
+    /* table height */
+    div.style.height = height+'px';
+    return div;
+}
+function setListeners(div){
+    var pageX,curCol,nxtCol,curColWidth,nxtColWidth;
+    div.addEventListener('mousedown', function (e) {
+        curCol = e.target.parentElement;
+        nxtCol = curCol.nextElementSibling;
+        pageX = e.pageX;
+        curColWidth = curCol.offsetWidth
+        if (nxtCol)
+            nxtColWidth = nxtCol.offsetWidth
+    });
+
+    document.addEventListener('mousemove', function (e) {
+    if (curCol) {
+        var diffX = e.pageX - pageX;
+
+        if (nxtCol)
+            nxtCol.style.width = (nxtColWidth - (diffX))+'px';
+
+        curCol.style.width = (curColWidth + diffX)+'px';
+        }
+    });
+
+    document.addEventListener('mouseup', function (e) { 
+        curCol = undefined;
+        nxtCol = undefined;
+        pageX = undefined;
+        nxtColWidth = undefined;
+        curColWidth = undefined;
+    });
+}
+function Total(rowNumber){
+    var qtyInput = document.getElementById("id_quantity" + rowNumber);
+    var priceInput = document.getElementById("id_price" + rowNumber);
+    var rowtotalInput = document.getElementById("id_product_total" + rowNumber);
+    if(priceInput.value !== ""){
+        priceInput.value = parseFloat(priceInput.value).toFixed(2);
+    }
+    else{
+        priceInput.value = "";
+    }
+    if(qtyInput.value !== '' && priceInput.value !== ''){
+        rowtotalInput.value = parseFloat(parseFloat(priceInput.value) * parseFloat(qtyInput.value)).toFixed(2);
+    }
+    else{
+    rowtotalInput.value = '';
+    }
+    updateTotalValue();
+    
+}
+function updateTotalValue(){
+    var subTotal = document.getElementById("id_sub_total");
+    var totalValue = document.getElementById("id_total_value");
+    var totalGST = document.getElementById("id_total_gst");
+    var addingUp = parseFloat(0)
+    var rowCount = productsTable.rows.length;
+    for(i=1; i < (rowCount-3); i++){
+        var rowTotal = document.getElementById("id_product_total" + i );
+        if(parseFloat(rowTotal.value)){
+            addingUp = addingUp + parseFloat(rowTotal.value);
+        }
+    }
+    subTotal.innerText = parseFloat(addingUp).toFixed(2);
+    var gstStatus = "{{invoice.parent.business.gst_registered}}";
+    if(gstStatus == "True"){
+        totalGST.innerText = parseFloat(addingUp * 0.10).toFixed(2);
+        totalValue.innerText = parseFloat(parseFloat(subTotal.innerText) + parseFloat(totalGST.innerText)).toFixed(2);
+        document.getElementById("id_sub_total_input").value = subTotal.innerText;
+        document.getElementById("id_total_gst_input").value = totalGST.innerText;
+        document.getElementById("id_total_value_input").value = totalValue.innerText;
+        var amountReceived = document.getElementById("id_amount_received").value;
+        var balanceDue = document.getElementById("id_balance_due")
+        var balanceDueInput = document.getElementById("id_balance_due_input")
+        if(amountReceived){
+            var outstanding = parseFloat(parseFloat(totalValue.innerText) - parseFloat(amountReceived)).toFixed(2);
+            balanceDue.innerText = outstanding;
+            balanceDueInput.value = outstanding;
+        }else{
+            balanceDue.innerText = totalValue.innerText;
+            balanceDueInput.value = parseFloat(0).toFixed(2);
+        }
+    }else{
+        totalGST.innerText = parseFloat(0).toFixed(2);
+        totalValue.innerText = parseFloat(subTotal.innerText).toFixed(2);
+        document.getElementById("id_sub_total_input").value = subTotal.innerText;
+        document.getElementById("id_total_gst_input").value = "0";
+        document.getElementById("id_total_value_input").value = totalValue.innerText;
+        var amountReceived = document.getElementById("id_amount_received").value;
+        var balanceDue = document.getElementById("id_balance_due")
+        var balanceDueInput = document.getElementById("id_balance_due_input")
+        if(amountReceived){
+            var outstanding = parseFloat(parseFloat(totalValue.innerText) - parseFloat(amountReceived)).toFixed(2);
+            balanceDue.innerText = outstanding;
+            balanceDueInput.value = outstanding;
+        }else{
+            balanceDue.innerText = totalValue.innerText;
+            balanceDueInput.value = parseFloat(0).toFixed(2);
+        }
+    }
+    
+    
+}
+function customerDashboard(customerId){
+    window.location.href = ("/customer/customer_dashboard/" + customerId )
+}
+function paidInFull(){
+    updateTotalValue()
+    let amountReceived = document.getElementById('id_amount_received');
+    let totalValue = document.getElementById("id_total_value");
+    amountReceived.value = totalValue.innerText;
+    updateTotalValue()
+}
+function checkDate(){
+    let date = new Date($("#id_invoice_date")[0].value);
+    let dueDate = new Date($("#id_due_date")[0].value);
+    if (date > dueDate){
+        $("#id_due_date")[0].value = "";
+        showMessage('alert-error', "Due Date can not be before invoice Date")
+    }
+}
+
+// ProductList
+function productlist_option_selected(prodId, prodTitle, prodDescription, prodPrice, cellNumber) {
+    let search_field = document.getElementById('id_product_title' + cellNumber);
+    let search_list = document.getElementById('productlist_search_list' + cellNumber);
+    search_field.value = prodTitle;
+    document.getElementById('id_product_description' + cellNumber).value = prodDescription;
+    document.getElementById('id_price' + cellNumber).value = prodPrice;
+    document.getElementById('id_product_total' + cellNumber).value = prodPrice;
+    document.getElementById('id_quantity' + cellNumber).value = 1;
+    search_list.style.display = "none";
+    updateTotalValue();
+}
+function productlist_search_products(cellNumber) {
+    let search_field = document.getElementById('id_product_title' + cellNumber).value
+    search_field=search_field.toLowerCase();
+    let x = document.getElementsByClassName('productlists');
+    let search_list = document.getElementById('productlist_search_list' + cellNumber);
+    search_list.classList.remove("d-none")
+    for (i = 0; i < x.length; i++) { 
+        if (!x[i].innerHTML.toLowerCase().includes(search_field)) {
+            x[i].style.display="none";
+        }
+        else {
+            x[i].style.display="block";
+        }
+    }
+}
+function productlist_searchbar(cellNumber) {
+    let search_list = document.getElementById('productlist_search_list' + cellNumber);
+    productlist_feed(cellNumber);
+    search_list.style.display = "block"
+    
+}
+function productlist_search_list_blur(cellNumber){
+    var container = document.getElementById('productlist_search_list' + cellNumber);
+    document.addEventListener('click', function( event ) {
+        if (container != event.target && !container.innerText.includes(event.target)) {
+            container.style.display="none"
+        }
+    }, {once:true});
+}
+function productlist_feed(rowCount){
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+    };
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'ajax_productlist_feed' %}",
+        data: payload,
+        success: function(data){
+            if(data[0] == "success"){
+                let container = document.getElementById("productlist_search_list" + rowCount)
+                while (container.childNodes.length > 1){
+                    container.removeChild(container.lastChild);
+                }
+                for (i = 1; i < data.length; i++) { 
+                    var element23 = document.createElement("li");
+                    element23.classList = "productlists list-group-item btn-primary index-2";
+                    element23.setAttribute('role','button')
+                    element23.setAttribute('onclick',"productlist_option_selected('" + data[i].id + "','" + data[i].product_title + "','" + data[i].product_description + "','" + data[i].price + "','" + rowCount + "')");
+                    element23.innerText = data[i].product_title;
+                    container.appendChild(element23);
+                }
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(){
+        }
+    })
+}
+
+// ProductList_d
+function productlist_search_products_d(cellNumber) {
+    let search_field = document.getElementById('id_product_description' + cellNumber).value
+    search_field=search_field.toLowerCase();
+    let x = document.getElementsByClassName('productlists_d');
+    let search_list = document.getElementById('productlist_description_list' + cellNumber);
+    search_list.classList.remove("d-none")
+    for (i = 0; i < x.length; i++) { 
+        if (!x[i].innerHTML.toLowerCase().includes(search_field)) {
+            x[i].style.display="none";
+        }
+        else {
+            x[i].style.display="block";
+        }
+    }
+}
+function productlist_searchbar_d(cellNumber) {
+    let search_list = document.getElementById('productlist_description_list' + cellNumber);
+    productlist_feed_d(cellNumber);
+    search_list.style.display = "block"
+    
+}
+function productlist_search_list_blur_d(cellNumber){
+    var container = document.getElementById('productlist_description_list' + cellNumber);
+    document.addEventListener('click', function( event ) {
+        if (container != event.target && !container.innerText.includes(event.target)) {
+            container.style.display="none"
+        }
+    }, {once:true});
+}
+function productlist_feed_d(rowCount){
+    // displayLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+    };
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'ajax_productlist_feed' %}",
+        data: payload,
+        success: function(data){
+            if(data[0] == "success"){
+                let container = document.getElementById("productlist_description_list" + rowCount)
+                while (container.childNodes.length > 1){
+                    container.removeChild(container.lastChild);
+                }
+                for (i = 1; i < data.length; i++) { 
+                    var element23 = document.createElement("li");
+                    element23.classList = "productlists_d list-group-item btn-primary index-2";
+                    element23.setAttribute('role','button')
+                    element23.setAttribute('onclick',"productlist_option_selected('" + data[i].id + "','" + data[i].product_title + "','" + data[i].product_description + "','" + data[i].price + "','" + rowCount + "')");
+                    element23.innerText = data[i].product_description;
+                    container.appendChild(element23);
+                }
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(){
+            // displayLoadingSpinner(false);
+        }
+    })
+}
+
+// Attachments
+let counter = 0;
+function upload_spinner(status){
+    if (status){
+        $("#upload_spinner").show()
+    }else{
+        $("#upload_spinner").hide()
+    }
+}
+function readURL(input){
+    if(input.files && input.files[0]){
+        for (let i = 0; i < input.files.length; i++){
+            if (input.files[i].size < 50000000){
+                var reader = new FileReader()
+                reader.onload = function(e){
+                    var image = e.target.result
+                    let fileName = input.files[i].name
+                    let fileSize = input.files[i].size
+                    addNewAttachment(image, fileName, counter, fileSize)
+                    counter++;
+                }
+                reader.readAsDataURL(input.files[i])
+            }else{
+                $("#formFileSm")[0].value = "";
+                showMessage('alert-error',"File is Too Large")
+            }
+        }
+    }
+}
+    
+const months = ["Jan","Feb","Mar","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
+function addNewAttachment(source, fileName, c, fSize){
+    let attachmentTable = document.getElementById("attachment_table")
+
+    let tr = document.createElement("tr");
+    tr.id = "attachment_row" + c;
+    let td1 = document.createElement("td");
+    td1.classList = "p-0";
+    let a1 = document.createElement("a");
+    // a1.target = "_blank";
+    a1.href = "#";
+    let img1 = document.createElement("img")
+    img1.src = source;
+    img1.id = "upload_img" + c;
+    img1.classList = "rounded-3 mw-50px d-inline";
+    a1.appendChild(img1);
+    td1.appendChild(a1);
+
+    let td2 = document.createElement("td");
+    td2.classList = "p-0 fs-8";
+    let a2 = document.createElement("a");
+    a2.href = "#";
+    a2.style.wordBreak = "break-all";
+    a2.innerText = fileName;
+    a2.id = "upload_filename" + c;
+    br = document.createElement("br");
+    date = document.createElement("span");
+    d = new Date()
+    date.innerText = d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear() + " " + d.toJSON().slice(11,16) + " " + parseFloat(fSize/1000000).toFixed(2) + " MB"
+    let div2 = document.createElement("div");
+    div2.classList = "progress mx-3";
+    let div21 = document.createElement("div");
+    div21.classList = "progress-bar progress-bar-striped progress-bar-animated";
+    div21.setAttribute("role","progressbar");
+    div21.id = "progressbar" + c;
+    div21.style.width = "0%";
+    div21.innerText = "0%";
+    div2.appendChild(div21);
+    td2.appendChild(a2);
+    td2.appendChild(br);
+    td2.appendChild(date);
+    td2.appendChild(div2);
+    
+    
+    let td3 = document.createElement("td");
+    td3.classList = "p-0 fs-8";
+    let a3 = document.createElement("a");
+    a3.classList = "btn btn-sm btn-success";
+    a3.setAttribute("onclick","uploadFiles("+ c +")");
+    a3.innerText = "Add";
+    a3.id = "upload_add_button" + c;
+    td3.appendChild(a3);
+
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
+    attachmentTable.appendChild(tr);
+}
+function uploadFiles(i){
+    image = $("#upload_img" + i)[0].src;
+    fileName = $("#upload_filename" + i)[0].innerText;
+    let payLoad = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        image: image,
+        filename: fileName,
+        inv_id: "{{invoice.id}}",
+    }
+    $.ajax({
+        xhr: function() {
+            var xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener("progress", function(evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = evt.loaded / evt.total;
+                    percentComplete = parseInt(percentComplete * 100);
+                    $("#progressbar"+i)[0].style.width = percentComplete + "%";
+                    $("#progressbar"+i)[0].innerText = percentComplete + "%";
+
+                    if (percentComplete === 100) {
+                    }
+                }
+            }, false);
+            return xhr;
+        },
+        type: "POST",
+        dataType: "json",
+        url: "{% url 'upload_attachment' %}",
+        data: payLoad,
+        timeout: 120000,
+        success: function(data){
+            if(data.result == "success"){
+                let attachmentTable = document.getElementById("attachment_table")
+                let tr = document.getElementById("attachment_row" + i)
+                while (tr.lastChild) {
+                    tr.removeChild(tr.lastChild);
+                }
+                let td1 = document.createElement("td");
+                td1.classList = "p-0";
+                let a1 = document.createElement("a");
+                a1.target = "_blank";
+                a1.href = data.attachmentURL;
+                let img1 = document.createElement("img")
+                img1.src = data.attachmentURL;
+                img1.classList = "rounded-3 mw-50px d-inline";
+                a1.appendChild(img1);
+                td1.appendChild(a1);
+
+                let td2 = document.createElement("td");
+                td2.classList = "p-0 fs-8";
+                let a2 = document.createElement("a");
+                a2.target = "_blank";
+                a2.href = data.attachmentURL;
+                a2.style.wordBreak = "break-all";
+                a2.innerText = data.attachmentFileName;
+                let span2 = document.createElement("span")
+                span2.innerHTML = "<br>" + data.attachmentDateSize;
+                td2.appendChild(a2);
+                td2.appendChild(span2);
+                
+                
+                let td3 = document.createElement("td");
+                td3.classList = "p-0 fs-8";
+                let a3 = document.createElement("a");
+                a3.classList = "btn btn-sm btn-danger";
+                a3.setAttribute("onclick","deleteAttachment("+data.attachmentID+")");
+                a3.innerText = "Del";
+                td3.appendChild(a3);
+
+                tr.appendChild(td1);
+                tr.appendChild(td2);
+                tr.appendChild(td3);
+                attachmentTable.appendChild(tr);
+                tr.id = "attachment_row" + data.attachmentID;
+                $("#formFileSm")[0].value = ""
+
+            }
+            else if(data.result == "error"){
+                showMessage('alert-error', data.message)
+            }
+        },
+        error: function(data){
+            console.error('something went wrong')
+            console.log(data.result)
+            console.log(data.exception)
+            
+        },
+        complete: function(data){
+        }
+    })
+}
+function deleteAttachment(attachID){
+    upload_spinner(true)
+    invoiceData = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        attach_id: attachID,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'delete_attachment' %}",
+        data: invoiceData,
+        success: function(data){
+            if(data.result == "success"){
+                showMessage('alert-success', "Attachment Has been deleted");
+                $("#attachment_row" + attachID)[0].remove();
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin!");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(){
+            upload_spinner(false);
+        }
+    })
+}
+function uploadAll(){
+    for (i=0; i<counter; i++){
+        if ($("#upload_add_button" + i)[0]){
+            $("#upload_add_button" + i)[0].click()
+        }
+    }
+}
+function downloadAll(invID){
+    window.location.href = "/invoicing/download_all/" + invID;
+}
+function viewAll(cusID){
+    window.location.href = ("/invoicing/viewall_attachments/" + cusID)
+}
+
+// add ProductList Window
+function hideaddproductwindow(){
+    $("#add_new_product_window").hide(200);
+    $("#id_rowCount")[0].value = "";
+    $("#product_title")[0].value = "";
+    $("#product_description")[0].value = "";
+}
+function showaddproductwindow(rowCount){
+    $("#add_new_product_window").animate({height: "toggle"},200);
+    $("#id_rowCount")[0].value = rowCount;
+    $("#product_title")[0].value = $("#id_product_title" + rowCount)[0].value;
+    $("#product_description")[0].value = $("#id_product_description" + rowCount)[0].value;
+}
+function addNewProduct(){
+    displayLoadingSpinner(true);
+    payload = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        product_id: $( "#product_id")[0].value,
+        product_title: $( "#product_title")[0].value,
+        product_description: $( "#product_description")[0].value,
+        price: $( "#price")[0].value,
+        rowCount: $( "#id_rowCount")[0].value,
+    };
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'add_product' %}",
+        data: payload,
+        success: function(data){
+            if(data.result == "success"){
+                showMessage('alert-success', "Product has been added successfully");
+                hideaddproductwindow();
+                productlist_option_selected(data.id, data.product_title, data.product_description, data.price, data.rowCount);
+                $("#product_id")[0].value = '';
+                $("#product_title")[0].value = '';
+                $("#product_description")[0].value = '';
+                $("#price")[0].value = '';
+                $("#id_rowCount")[0].value = '';
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            // console.log(data)
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(){
+            displayLoadingSpinner(false);
+        }
+    })
+    return false;
+}
+
+//Delete Invoice:
+function confirm_delete_window(status){
+    if(status){
+        $("#confirm_delete").show(200);
+    }else{
+        $("#confirm_delete").hide(200);
+    }
+}
+function invoiceDeleteFunc(invoiceId){
+    invoiceData = {
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        invoice_id: invoiceId,
+    },
+    $.ajax({
+        type: 'POST',
+        datatype: 'json',
+        url: "{% url 'delete_invoice' %}",
+        data: invoiceData,
+        success: function(data){
+            if(data.result == "success"){
+                window.location.href = ("/customer/customer_dashboard/{{invoice.customer.id}}" )
+            }
+            else if (data.result == "error"){
+                showMessage('alert-error', "Something went wrong, please contact the system admin !");
+            }
+        },
+        error: function(data){
+            showMessage('alert-error', "Please check your internet connection and try again!");
+        },
+        complete: function(data){
+        },
+    })    
+}
+
+addRow();
+addRow();
+updateTotalValue();
+
+</script>
+
+{% endblock %}

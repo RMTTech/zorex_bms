@@ -1,0 +1,112 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block css %}{% endblock %}
+{% block main %}
+        
+<div class="container p-1 mw-1400px mt-2">
+    <div class="d-flex justify-content-around flex-wrap">
+        <!-- Account Settings -->
+        <div class="col-sm-6 mb-2 position-relative">
+            <div class="card shadow">
+                <div id="settings_loading_spinner" class="backdrop modal position-absolute" tabindex="-1">
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <h5 class="card-header text-center">Account Settings</h5>
+                <div class="card-body">
+                    <!-- <div class="m-1 form-check form-switch">
+                        <label for="customers_visability" class="form-check-label">Allow Employee Accounts to see all Customers</label>
+                        <input type="checkbox" class="form-check-input top-50 start-0" id="customers_visability" {% if user.conf.customers_visability %}checked{% endif %}>
+                    </div><hr>
+                    <div class="m-1 form-check form-switch">
+                        <label for="invoices_visability" class="form-check-label">Allow Employee Accounts to see all Invoices</label>
+                        <input type="checkbox" class="form-check-input" id="invoices_visability" {% if user.conf.invoices_visability %}checked{% endif %}>
+                    </div><hr>
+                    <div class="m-1 form-check form-switch">
+                        <label for="appointments_visability" class="form-check-label">Allow Employee Accounts to see all Appointments</label>
+                        <input type="checkbox" class="form-check-input" id="appointments_visability" {% if user.conf.appointments_visability %}checked{% endif %}>
+                    </div><hr>
+                    <div class="m-1 form-check form-switch">
+                        <label for="productslist_visability" class="form-check-label">Share admin account Products List with all employee accounts</label>
+                        <input type="checkbox" class="form-check-input" id="productslist_visability" {% if user.conf.productslist_visability %}checked{% endif %}>
+                    </div><hr>
+                    <div class="m-1 form-check form-switch">
+                        <label for="productslist_accessability" class="form-check-label">Allow admin account to see all created Products List</label>
+                        <input type="checkbox" class="form-check-input" id="productslist_accessability" {% if user.conf.productslist_accessability %}checked{% endif %}>
+                    </div><hr> -->
+                    <div class="h5 text-center">Membership Discounts</div>
+                    <div class="container">
+                        <span for="under30discount" class="form-label">Under $30 Discount:</span>
+                        <input type="text" id="under30discount" class="form-control" value="{% if conf.under_30_discount %}{{conf.under_30_discount}}{% endif %}">
+                    </div>
+                    <div class="container">
+                        <span for="over30discount" class="form-label">Over $30 Discount:</span>
+                        <input type="text" id="over30discount" class="form-control" value="{% if conf.over_30_discount %}{{conf.over_30_discount}}{% endif %}">
+                    </div>
+                    
+                    <!-- <div class="m-1 form-check form-switch">
+                        <label for="quotesms_notification" class="form-check-label">Receive SMS Notification when a Quote is accepted or rejected.</label>
+                        <input type="checkbox" class="form-check-input top-50 start-0" id="quotesms_notification" {% if user.conf.quotesms_notification %}checked{% endif %}>
+                    </div> -->
+                </div>
+                <div class="card-footer text-center">
+                    <button class="btn btn-success col-sm-2 m-1" style="width:unset;" onclick="adminSettingsAPI('PUT')">Update</button>
+                    <button class="btn btn-primary col-sm-2 m-1" style="width:unset;" onclick="adminSettingsAPI('GET')">Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block script %}
+
+<script>
+
+    //Settings API
+    function adminSettingsSpinner(status){
+        if (status){
+            $("#settings_loading_spinner").show()
+        }else{
+            $("#settings_loading_spinner").hide()
+        }
+    }
+    function adminSettingsAPI(apiCode){
+        adminSettingsSpinner(true);
+        payload = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            action: apiCode,
+            id: '{{user.id}}',
+            under30discount: $("#under30discount")[0].value,
+            over30discount: $("#over30discount")[0].value,
+        },
+        $.ajax({
+            type: 'POST',
+            datatype: 'json',
+            url: "{% url 'admin_settings_api' %}",
+            data: payload,
+            success: function(data){
+                if (data.result == "success"){
+                    $("#under30discount")[0].value = data.under30discount;
+                    $("#over30discount")[0].value = data.over30discount;
+                    showMessage('alert-success', data.message);
+                }
+                else if (data.result == "error"){
+                    showMessage('alert-error', data.message);
+                }
+            },
+            error: function(data){
+                showMessage('alert-error','Please check your internet and try again!');
+            },
+            complete: function(data){
+                adminSettingsSpinner(false);
+            },
+        })
+    }
+
+</script>
+
+{% endblock %}

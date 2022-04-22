@@ -1,0 +1,43 @@
+{% extends 'frontend/base.html' %}
+
+{% load static %}
+
+{% block css %}{% endblock %}
+
+{% block main %}
+
+<div id="id_displayed_area" class="container p-2 mw-1400px mt-2">
+    <div id="id_customer_details" style="max-width: unset !important;" class="card shadow bg-light mobilecard">
+        <div class="card-header">
+            <h4 class="text-center" style="color:#0000be;">Invoice {{invoice.invoice_no}} History</h4>
+        </div>
+        <div class="card-body p-0" style="height: 40rem; overflow: auto;">
+            <table class="table TABLE-SM">
+                <thead>
+                    <tr>
+                        <td>Details</td>
+                        <td>Date</td>
+                        <td>Done By</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for history in invoice.history.all %}
+                    <tr>
+                        <td>{{history.update}}</td>
+                        <td>{{history.update_date|date:"d M Y g:iA"}}</td>
+                        <td>{{history.update_by.name}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer">
+            <div class="text-center">
+                <button type="button" class="btn btn-dark btn-sm my-1" onclick="window.history.back();">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
